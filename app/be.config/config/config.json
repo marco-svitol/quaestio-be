@@ -1,0 +1,14 @@
+{
+    "development" : {
+        "global": {
+            "loglevel" : "debug",
+            "certpath" : "",
+            "certpw" : ""
+        }
+    },
+    "production" : {
+        "global": {
+            "loglevel" : "info"
+        }
+    }
+}

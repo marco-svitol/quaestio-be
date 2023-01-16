@@ -1,0 +1,25 @@
+{
+  "name": "k8sbooster",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app/index.js",
+  "nodemonConfig": {
+    "ext": "js,json"
+  },
+  "scripts": {
+    "start": "nodemon app/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Marco Cambon",
+  "license": "ISC",
+  "dependencies": {
+    "cls-rtracer": "^2.6.0",
+    "dotenv": "^16.0.3",
+    "express": "^4.17.2",
+    "lodash": "^4.17.21",
+    "moment-timezone": "^0.5.34",
+    "nodemon": "^2.0.15",
+    "perfy": "^1.1.5",
+    "winston": "^3.4.0"
+  }
+}
