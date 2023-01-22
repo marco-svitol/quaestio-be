@@ -5,6 +5,7 @@ module.exports = myapp => {
   const apihealth = require("../logic/health");
 
   routerapp.get("/test",      apiexternal.test );
+  routerapp.get("/search",      apiexternal.search );
   myapp.use('/api/v1', routerapp);
 
   routermetrics.get("/health", apihealth.health);

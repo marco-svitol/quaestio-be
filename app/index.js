@@ -19,6 +19,9 @@ app.use((req, res, next) => {
 	next();
 });
 
+//add cache, cronjob, connection to OPS, token unpack.
+
+
 require("./routes/api.routes.v1")(app);
 server(app, () =>{
 	logger.info(`Quaestio backend server is running. Listening on port ${process.env.SERVERPORT} and node_env is ${process.env.NODE_ENV}.`)
