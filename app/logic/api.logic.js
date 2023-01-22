@@ -15,8 +15,7 @@ exports.test = async (req, res) => {
 	res.status(200).send({quote: randomQuote.default().body, author: randomQuote.default().author})
 }
 
-const testreponse = {
-    "inventions": [
+const testreponse = [
         {
             "invention_title": "Automated Vacuum Cleaner",
             "doc_num": "US100001",
@@ -185,12 +184,9 @@ const testreponse = {
 			"date": "2024-06-01",
 			"ops_link": "https://www.example.com/smartmattress"
 		}
-		]
-	}
-
-
-
+	]
+	
 exports.search = async(req, res) => {
 	logger.srvconsoledir(req, start=0);
-	res.status(200).send(testreponse); 
+	res.status(200).json(testreponse); 
 }
