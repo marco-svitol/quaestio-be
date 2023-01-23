@@ -1,70 +1,56 @@
-let access_token;
-let expires_in;
+const axios=require('axios');
 
-const https = require('https');
-
-const data = JSON.stringify({
-  key1: 'value1',
-  key2: 'value2'
-});
-
-const options = {
-  hostname: 'example.com',
-  port: 443,
-  path: '/submit',
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Content-Length': data.length
+module.exports = class opsService{
+  constructor() {
+    this.authData = {
+      grant_type : 'client_credentials'
+    };
+    this.authOptions = {
+      baseURL: `${process.env.OPSBASEURL}`,
+      headers: {
+        'Authorization': `Basic ${Buffer.from(process.env.OPSCLIENTID+":"+process.env.OPSCLIENTSECRET,'utf8').toString('base64')}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+    };
+    this.commonOptions = {
+      baseURL: `${process.env.OPSBASEURL}`,
+      headers: ""
+    };
+    this.authResponse = null;
+    this.authAxiosInstance = axios.create(this.authOptions);
+    this.commonAxiosInstance = null; 
+    this.authParams = new URLSearchParams(this.authData);
+    this.authParams.append('extraparam', 'value');
   }
-};
 
-const req = https.request(options, (res) => {
-  console.log(`statusCode: ${res.statusCode}`);
-  res.on('data', (d) => {
-    let response = JSON.parse(d);
-    if (response.access_token) {
-      access_token = response.access_token;
-    }
-    if (response.expires_in) {
-      expires_in = response.expires_in;
-    }
-    console.log(access_token);
-    console.log(expires_in);
-    setTimeout(() => {
-        sendRequest();
-    }, (expires_in - 60) * 1000);
-  });
-});
-
-req.on('error', (error) => {
-  console.error(error);
-});
-
-req.write(data);
-req.end();
-
-function sendRequest(){
-    const req = https.request(options, (res) => {
-    console.log(`statusCode: ${res.statusCode}`);
-    res.on('data', (d) => {
-        let response = JSON.parse(d);
-        if (response.access_token) {
-            access_token = response.access_token;
+  async refreshToken(next){
+    this.authAxiosInstance.post("/auth/accesstoken", this.authParams)
+      .then((response) => {
+        this.authResponse=response.data;
+        this.commonOptions.headers = {
+          'Authorization': `Bearer ${this.authResponse.access_token}`
         }
-        if (response.expires_in) {
-            expires_in = response.expires_in;
-        }
-        console.log(access_token);
-        console.log(expires_in);
-        setTimeout(() => {
-            sendRequest();
-        }, (expires_in - 60) * 1000);
-    });
-    });
-    req.on('error', (error) => {
-    console.error(error);
-    });
-    req.write(data);
-    req.end();
+        this.commonAxiosInstance = axios.create(this.commonOptions);
+        return next(null);
+      })
+      .catch((err) => {
+        return next(err);
+      })
+  }
+
+  async publishedDataSearch(strQuery, next){
+    
+    this.commonAxiosInstance.get("/rest-services/published-data/search?q="+strQuery)
+    .then((response) => {
+      return next(null, response.data);
+    })
+    .catch((err) => {
+      return next(err, null);  
+    })
+  }
 }
+
+
+
+
+

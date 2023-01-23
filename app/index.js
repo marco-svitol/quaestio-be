@@ -1,4 +1,6 @@
 //config = require('./be.config');
+const dotenv = require('dotenv');
+dotenv.config();  // call config() before loading config.js!
 global.config_data = require('./be.config').config;
 const express = require("express");
 const app = express();
@@ -6,6 +8,7 @@ const bodyParser = require("body-parser");
 const logger=require('./logger'); 
 const server=require('./server');
 const rTracer = require('cls-rtracer');
+const opsQuaestio = require("./consts").opsQuaestio;
 
 app.use(rTracer.expressMiddleware());							// keep s unique ID for each request
 app.use(bodyParser.json()); 									// parse requests of content-type - application/json
@@ -19,7 +22,7 @@ app.use((req, res, next) => {
 	next();
 });
 
-//add cache, cronjob, connection to OPS, token unpack.
+//add cache, cronjob
 
 
 require("./routes/api.routes.v1")(app);

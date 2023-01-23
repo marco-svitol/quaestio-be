@@ -1,11 +1,12 @@
 module.exports = myapp => {
   const routerapp =      require("express").Router();
   const routermetrics = require("express").Router();
-  const apiexternal = require("../logic/api.logic");
+  const apitest = require("../logic/v1/api.test");
+  const apisearch = require("../logic/v1/api.search")
   const apihealth = require("../logic/health");
 
-  routerapp.get("/test",      apiexternal.test );
-  routerapp.get("/search",      apiexternal.search );
+  routerapp.get("/test",      apitest.test );
+  routerapp.get("/search",      apisearch.search );
   myapp.use('/api/v1', routerapp);
 
   routermetrics.get("/health", apihealth.health);

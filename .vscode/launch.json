@@ -14,7 +14,10 @@
             "program": "${workspaceFolder}/app/index.js",
             "env": {
               "NODE_ENV": "development",
-              "SERVERPORT" : "80"
+              "SERVERPORT" : "80",
+              "OPSBASEURL" : "https://ops.epo.org/3.2",
+              "OPSCLIENTID" : "1MbJyjUInwHkHrPBMdow8Ss95sCnGHMA",
+              "OPSCLIENTSECRET" : "8TUBhBXhIGFlyu1r"
             },
             "outputCapture": "std"
           }
