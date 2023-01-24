@@ -36,11 +36,11 @@ if (process.env.NODE_ENV == 'development'){
     format: winston.format.combine(
       winston.format.colorize({ all: true })
       ),
-    level: global.config_data.global.loglevel
+    level: global.config_data.app.loglevel
   })
 }else{
   console = new winston.transports.Console({
-    level: global.config_data.global.loglevel
+    level: global.config_data.app.loglevel
   })
 }
 

@@ -22,7 +22,7 @@ app.use((req, res, next) => {
 	next();
 });
 
-//add cache, cronjob
+//add cache
 
 
 require("./routes/api.routes.v1")(app);

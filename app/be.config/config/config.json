@@ -1,13 +1,24 @@
 {
     "development" : {
-        "global": {
-            "loglevel" : "debug",
-            "certpath" : "",
-            "certpw" : ""
+        "app": {
+            "loglevel"      : "debug",
+            "certpath"      : "",
+            "certpw"        : "",
+            "cacheEnabled"  : 0,
+            "cacheTTLHours" : 8
+        },
+        "sqlConfigPool" : {
+            "connectionLimit"   : 10,
+            "user"              : "",
+            "password"          : "",
+            "server"            : "",
+            "database"          : "",
+            "requestTimeout"    : 180000,
+            "multipleStatements": true
         }
     },
     "production" : {
-        "global": {
+        "app": {
             "loglevel" : "info"
         }
     }
