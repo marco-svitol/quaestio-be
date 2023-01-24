@@ -11,8 +11,8 @@ RUN --mount=type=secret,id=OPSBASEURL \
     --mount=type=secret,id=OPSCLIENTID \
     --mount=type=secret,id=OPSCLIENTSECRET \
     export OPSBASEURL=$(cat /run/secrets/OPSBASEURL) && \
-    export OPSBASEURL=$(cat /run/secrets/OPSCLIENTID) && \
-    export OPSBASEURL=$(cat /run/secrets/OPSCLIENTSECRET)
+    export OPSCLIENTID=$(cat /run/secrets/OPSCLIENTID) && \
+    export OPSCLIENTSECRET=$(cat /run/secrets/OPSCLIENTSECRET)
 
 EXPOSE 80
 
