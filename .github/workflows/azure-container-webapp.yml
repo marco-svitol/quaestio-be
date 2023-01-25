@@ -66,7 +66,7 @@ jobs:
           secrets: |
             opsbaseurl=${{ secrets.OPSBASEURL }}
             opsclientid=${{ secrets.OPSCLIENTID }}
-            opsclientsecretT=${{ secrets.OPSCLIENTSECRET }}
+            opsclientsecret=${{ secrets.OPSCLIENTSECRET }}
 
   deploy:
     permissions:
