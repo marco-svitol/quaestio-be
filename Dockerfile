@@ -13,7 +13,7 @@ EXPOSE 80
 
 COPY . .
 
-RUN --mount=type=secret,id=opsbaseurl ls /run/secrets
-
-
+RUN --mount=type=secret,id=opsbaseurl --mount=type=secret,id=opsclientid --mount=type=secret,id=opsclientsecret \
+    export OPSBASEURL=$(cat /run/secrets/opsbaseurl) && export OPSCLIENTID=$(cat /run/secrets/opsclientid) && OPSCLIENTSECRET=$(cat /run/secrets/opsclientsecret) && echo $OPSBASEURL & ls /run/secrets
+    
 CMD ["npm", "start"]
