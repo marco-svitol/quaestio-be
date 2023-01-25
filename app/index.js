@@ -2,6 +2,7 @@
 const dotenv = require('dotenv');
 dotenv.config();  // call config() before loading config.js!
 global.config_data = require('./be.config').config;
+global.environment = require('./be.config').environment;
 const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
@@ -27,6 +28,6 @@ app.use((req, res, next) => {
 
 require("./routes/api.routes.v1")(app);
 server(app, () =>{
-	logger.info(`Quaestio backend server is running. Listening on port ${process.env.SERVERPORT} and node_env is ${process.env.NODE_ENV}.`)
+	logger.info(`Quaestio backend server is running. Listening on port ${global.config_data.app.serverPort} and node_env is ${global.environment}.`)
 })
 

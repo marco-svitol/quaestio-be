@@ -5,9 +5,9 @@ const logger=require('../logger');
 let authParams = new URLSearchParams({grant_type : 'client_credentials'});
 authParams.append('extraparam', 'value');
 const authOptions = {
-  baseURL: `${process.env.OPSBASEURL}`,
+  baseURL: `${global.config_data.app.opsBaseUrl}`,
   headers: {
-    'Authorization': `Basic ${Buffer.from(process.env.OPSCLIENTID+":"+process.env.OPSCLIENTSECRET,'utf8').toString('base64')}`,
+    'Authorization': `Basic ${Buffer.from(global.config_data.app.opsClientID+":"+global.config_data.app.opsClientSecret,'utf8').toString('base64')}`,
     'Content-Type': 'application/x-www-form-urlencoded'
   },
 };
@@ -38,7 +38,7 @@ module.exports = class opsService{
     
     newAxios.interceptors.request.use(
       async config => {
-        config.baseURL = `${process.env.OPSBASEURL}`,
+        config.baseURL = `${global.config_data.app.opsBaseUrl}`,
         config.headers = {
             Authorization : `Bearer ${authResponse.access_token}`,
             Accept : 'application/json, application/pdf, application/jpeg, application/gif'

@@ -31,7 +31,7 @@ const myCustomLevels = {
 winston.addColors(myCustomLevels.colors);
 
 var console = null;
-if (process.env.NODE_ENV == 'development'){
+if (global.environment === 'development'){
   console = new winston.transports.Console({
     format: winston.format.combine(
       winston.format.colorize({ all: true })

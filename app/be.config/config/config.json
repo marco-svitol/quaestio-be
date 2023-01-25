@@ -2,10 +2,14 @@
     "development" : {
         "app": {
             "loglevel"      : "debug",
+            "opsBaseUrl"    : "",
+            "opsClientID"   : "",
+            "opsClientSecret" : "",
             "certpath"      : "",
             "certpw"        : "",
             "cacheEnabled"  : 0,
-            "cacheTTLHours" : 8
+            "cacheTTLHours" : 8,
+            "serverPort"    : 80
         },
         "sqlConfigPool" : {
             "connectionLimit"   : 10,
