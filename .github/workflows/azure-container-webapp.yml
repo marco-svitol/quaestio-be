@@ -64,9 +64,9 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:${{ github.sha }}
           file: ./Dockerfile
           secrets: |
-            "OPSBASEURL=${{ secrets.OPSBASEURL }}"
-            "OPSCLIENTID=${{ secrets.OPSCLIENTID }}"
-            "OPSCLIENTSECRET=${{ secrets.OPSCLIENTSECRET }}"
+            OPSBASEURL=${{ secrets.OPSBASEURL }}
+            OPSCLIENTID=${{ secrets.OPSCLIENTID }}
+            OPSCLIENTSECRET=${{ secrets.OPSCLIENTSECRET }}
 
   deploy:
     permissions:
