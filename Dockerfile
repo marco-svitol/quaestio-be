@@ -13,7 +13,7 @@ EXPOSE 80
 
 COPY . .
 
-RUN --mount=type=secret,id=opsbaseurl && ls /run/secrets
+RUN --mount=type=secret,id=opsbaseurl ls /run/secrets
 
 
 CMD ["npm", "start"]
