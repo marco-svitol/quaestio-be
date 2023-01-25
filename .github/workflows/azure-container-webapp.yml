@@ -56,17 +56,21 @@ jobs:
 
       - name: Lowercase the repo name and username
         run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
-
+      
+      - name: Show secret
+        run: echo "OPSBASEURL=${{ secrets.OPSBASEURL }}"
+        
       - name: Build and push container image to registry
         uses: docker/build-push-action@v3
         with:
+          context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:${{ github.sha }}
           file: ./Dockerfile
           secrets: |
-            opsbaseurl=${{ secrets.OPSBASEURL }}
-            opsclientid=${{ secrets.OPSCLIENTID }}
-            opsclientsecret=${{ secrets.OPSCLIENTSECRET }}
+            "opsbaseurl=${{ secrets.OPSBASEURL }}"
+            "opsclientid=${{ secrets.OPSCLIENTID }}"
+            "opsclientsecret=${{ secrets.OPSCLIENTSECRET }}"
 
   deploy:
     permissions:
