@@ -10,7 +10,7 @@ RUN npm i -g npm@9.1.1 && npm i && find node_modules ! -user root | xargs chown 
 RUN --mount=type=secret,id=OPSBASEURL \
     --mount=type=secret,id=OPSCLIENTID \
     --mount=type=secret,id=OPSCLIENTSECRET \
-    OPSBASEURL=$(cat /run/secrets/OPSBASEURL) && export OPSBASEURL && \
+    cat /run/secrets/OPSBASEURL \
     OPSCLIENTID=$(cat /run/secrets/OPSCLIENTID) && export OPSCLIENTID && \
     OPSCLIENTSECRET=$(cat /run/secrets/OPSCLIENTSECRET) && export OPSCLIENTSECRET
 
