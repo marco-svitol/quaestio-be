@@ -19,7 +19,7 @@
     },
     "production" : {
         "app": {
-            "loglevel" : "info"
+            "loglevel" : "debug"
         }
     }
 }
