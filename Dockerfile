@@ -13,16 +13,19 @@ EXPOSE 80
 
 COPY . .
 
-RUN --mount=type=secret,id=OPSBASEURL \
-    --mount=type=secret,id=OPSCLIENTID \
-    --mount=type=secret,id=OPSCLIENTSECRET \
-    cat /run/secrets/OPSBASEURL && \
-    OPSCLIENTID=$(cat /run/secrets/OPSCLIENTID) && export OPSCLIENTID && \
-    OPSCLIENTSECRET=$(cat /run/secrets/OPSCLIENTSECRET) && export OPSCLIENTSECRET
+RUN --mount=type=secret,id=opsbaseurl \
+    --mount=type=secret,id=opsclientid \
+    --mount=type=secret,id=opsclientsecret \
+    OPSBASEURL=$(cat /run/secrets/opsbaseurl) && export OPSBASEURL && \
+    OPSCLIENTID=$(cat /run/secrets/opsclientid) && export OPSCLIENTID && \
+    OPSCLIENTSECRET=$(cat /run/secrets/opsclientsecret) && export OPSCLIENTSECRET
 
 RUN echo "This is me $OPSBASEURL $OPSCLIENTID $OPSCLIENTSECRET"
 RUN echo $OPSBASEURL
-RUN cat  /run/secrets/OPSBASEURL
+RUN ls /run/secrets
+RUN cat  /run/secrets/opsbaseurl
+RUN cat  /run/secrets/opsclientid
+RUN cat  /run/secrets/opsbaseurl
 
 
 CMD ["npm", "start"]
