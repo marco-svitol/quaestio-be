@@ -54,17 +54,16 @@ module.exports = class opsService{
       (response) => {return response},
 
       async (error) => {
-        const originalRequest = error.config;
-        let statuscode;
-        if (error.response) {
-          statuscode = error.response.status;
+        if (error.response && error.config) {
+          const statuscode = error.response.status;
+          const originalRequest = error.config;
+          if ((!authResponse.access_token || [400,401,403].includes(statuscode)) && !originalRequest._retry ){
+            originalRequest._retry = true;
+            await refreshToken();
+            logger.debug (`Successfully acquired token from OPS, will expire in ${authResponse.expires_in} seconds`);
+            return newAxios(originalRequest); 
+          }
         }
-        if ((!authResponse.access_token || [400,401,403].includes(statuscode)) && !originalRequest._retry ){
-          originalRequest._retry = true;
-          await refreshToken();
-          logger.debug (`Successfully acquired token from OPS, will expire in ${authResponse.expires_in} seconds`);
-          return newAxios(originalRequest); 
-      }
       return Promise.reject(error);
     })
     return newAxios;

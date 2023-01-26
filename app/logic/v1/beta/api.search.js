@@ -1,5 +1,5 @@
 const logger=require('../../../logger'); 
-const msgServerError = 'Server error';
+const msgServerError = 'Internal server error';
 const opsQuaestio = require("../../../consts").opsQuaestio;
 // const XMLValidator = require('fast-xml-parser').XMLValidator;
 // const XMLParser = require('fast-xml-parser').XMLParser;
@@ -31,8 +31,8 @@ exports.search = async(req, res) => {
 			// 	res.status(500).send("XML invalid.")
 			// }
 		}else{
-			logger.error(err)
-			res.status(500).send()
+			logger.error(`publishedDataSearch: ${err.message}. Stack: ${err.stack}`)
+			res.status(500).send(msgServerError+" : "+err.message)
 		}
 		
 	})
@@ -50,8 +50,8 @@ exports.publication = async(req, res) => {
 			logger.debug(`Headers: ${headers}`);
 			res.status(200).send(body);
 		}else{
-			logger.error(err)
-			res.status(500).send()
+			logger.error(`publication: ${err.message}. Stack: ${err.stack}`)
+			res.status(500).send(msgServerError+" : "+err.message)
 		}	
 	})
 }
