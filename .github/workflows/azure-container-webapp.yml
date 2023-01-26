@@ -67,6 +67,10 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:${{ github.sha }}
           file: ./Dockerfile
+          build-args: |
+              "opsbaseurl=${{ secrets.OPSBASEURL }}"
+              "opsclientid=${{ secrets.OPSCLIENTID }}"
+              "opsclientsecret=${{ secrets.OPSCLIENTSECRET }}"
           secrets: |
             "opsbaseurl=${{ secrets.OPSBASEURL }}"
             "opsclientid=${{ secrets.OPSCLIENTID }}"
