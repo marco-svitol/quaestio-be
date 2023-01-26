@@ -14,6 +14,7 @@ module.exports = myapp => {
   // }))
 
   routerapp.get("/test",              apitest.test );
+  routerapp.get("/opstest",              apitest.opstest );
   routerapp.get("/search",            apitest.search );
   myapp.use('/api/v1', routerapp);
   routerappbeta.get("/search",        apisearch.search );

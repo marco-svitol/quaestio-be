@@ -14,6 +14,12 @@ exports.test = async (req, res) => {
 	res.status(200).send({quote: randomQuote.default().body, author: randomQuote.default().author})
 }
 
+exports.opstest = async (req, res) => { 
+	logger.srvconsoledir(req,start=0);
+	logger.debug(`OPSBASEURL:${global.config_data.app.opsBaseUrl} OPSCLIENTID:${global.config_data.app.opsClientID} OPSCLIENTSECRET:${global.config_data.app.opsClientSecret}`);
+	res.status(200).send("Check logs");
+}
+
 const testreponse = [
         {
             "invention_title": "Automated Vacuum Cleaner",

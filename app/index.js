@@ -28,6 +28,6 @@ app.use((req, res, next) => {
 
 require("./routes/api.routes.v1")(app);
 server(app, () =>{
-	logger.info(`Quaestio backend server is running. Listening on port ${global.config_data.app.serverPort} and node_env is ${global.environment}.`)
+	logger.info(`Quaestio backend server is running. Listening on port ${global.config_data.app.serverPort}, node_env is ${global.environment} and loglevel is ${global.config_data.app.loglevel}`)
 })
 
