@@ -7,7 +7,7 @@
             "opsClientSecret" : "",
             "certpath"      : "",
             "certpw"        : "",
-            "cacheEnabled"  : 0,
+            "cacheEnabled"  : 1,
             "cacheTTLHours" : 8,
             "serverPort"    : 80
         },

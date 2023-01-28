@@ -8,10 +8,10 @@ module.exports = myapp => {
   const apihealth       = require("../logic/health");
   const cacheMiddleware = require('../cache').cacheMiddleware;
 
-  // cacheMiddleware.unless = unless; 
-  // routerapp.use(cacheMiddleware.unless({
-  //   path: ['/test']
-  // }))
+  cacheMiddleware.unless = unless; 
+  routerapp.use(cacheMiddleware.unless({
+    path: ['/test']
+  }))
 
   routerapp.get("/test",              apitest.test );
   routerapp.get("/opstest",              apitest.opstest );

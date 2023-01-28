@@ -20,7 +20,7 @@ exports.search = async(req, res) => {
 	opsQuaestio.publishedDataSearch(reqQuery, (err,body, headers) => {
 		if (!err) {
 			logger.debug(`Headers: ${headers}`);
-			res.status(200).send(body);
+			res.status(200).json(body);
 			// const result = XMLValidator.validate(body);
 			// if (result === true){
 			// 	logger.verbose("XML validation passed.")
