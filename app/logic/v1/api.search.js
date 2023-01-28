@@ -1,6 +1,6 @@
-const logger=require('../../../logger'); 
+const logger=require('../../logger'); 
 const msgServerError = 'Internal server error';
-const opsQuaestio = require("../../../consts").opsQuaestio;
+const opsQuaestio = require("../../consts").opsQuaestio;
 // const XMLValidator = require('fast-xml-parser').XMLValidator;
 // const XMLParser = require('fast-xml-parser').XMLParser;
 // const parser = new XMLParser();
