@@ -1,6 +1,6 @@
-const logger=require('../../../logger'); 
+const logger=require('../../logger'); 
 const msgServerError = 'Internal server error';
-const opsQuaestio = require("../../../consts").opsQuaestio;
+const opsQuaestio = require("../../consts").opsQuaestio;
 // const XMLValidator = require('fast-xml-parser').XMLValidator;
 // const XMLParser = require('fast-xml-parser').XMLParser;
 // const parser = new XMLParser();
@@ -20,7 +20,7 @@ exports.search = async(req, res) => {
 	opsQuaestio.publishedDataSearch(reqQuery, (err,body, headers) => {
 		if (!err) {
 			logger.debug(`Headers: ${headers}`);
-			res.status(200).send(body);
+			res.status(200).json(body);
 			// const result = XMLValidator.validate(body);
 			// if (result === true){
 			// 	logger.verbose("XML validation passed.")

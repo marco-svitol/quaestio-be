@@ -1,4 +1,5 @@
 const axios=require('axios');
+const { id } = require('cls-rtracer');
 const logger=require('../logger'); 
 
 //Authentication Axios instance
@@ -94,24 +95,68 @@ module.exports = class opsService{
       return next(null, docs, opsLights);
 
       //Semaphors + quota
-      return next(null, response.data, response.headers);
+      //https://worldwide.espacenet.com/publicationDetails/biblio?FT=D&CC=US&NR=11552793&KC=B1"
+
+      //https://worldwide.espacenet.com/publicationDetails/biblio?FT=D&CC=KR&NR=20230006328&KC=A"
+      //https://worldwide.espacenet.com/publicationDetails/biblio?FT=D&CC=KR&NR=20230006328A&KC=A
+
+      //https://worldwide.espacenet.com/publicationDetails/biblio?II=0&ND=3&adjacent=true&locale=en_EP&FT=D&date=20230110&CC=KR&NR=20230006328A&KC=A
+
+
     })
     .catch((err) => {
       return next(err, null, null);  
     })
+  }
+
+  async pubblicationDataFiltered(docid, lang, next){
+    await this.publishedDataPubblicationDocDB(docid, async (err, body, headers) => {
+      if (!err){
+        let docData={};
+
+        const titles      = body['ops:world-patent-data']['exchange-documents']['exchange-document']['bibliographic-data']['invention-title']; 
+        docData.title = this.filterArrayLang(titles, lang)['$'];
+
+        const dates       = body['ops:world-patent-data']['exchange-documents']['exchange-document']['bibliographic-data']['publication-reference']['document-id'];
+        docData.date      = this.filterArrayLang(dates)['date']['$'];
+        
+        const abstracts   = body['ops:world-patent-data']['exchange-documents']['exchange-document']['abstract'];
+        docData.abstract  = this.filterArrayLang(abstracts,lang)['p']['$'];
+        
+        const applicants  = body['ops:world-patent-data']['exchange-documents']['exchange-document']['bibliographic-data']['parties']['applicants']['applicant'];
+        docData.applicant = this.filterArrayLang(applicants)['applicant-name']['name']['$'];
+        
+        const inventors   =  body['ops:world-patent-data']['exchange-documents']['exchange-document']['bibliographic-data']['parties']['inventors']['inventor'];
+        docData.inventor  = this.filterArrayLang(inventors)['inventor-name']['name']['$'];
+        
+        return next(null, docData, headers);
+      }else{
+        return (err)
+      }
+    })
+  }
+
+  filterArrayLang(field, lang){
+    if (Array.isArray(field)){
+      if (lang){
+        return (field.filter(d=>d['@lang']==lang)[0]);
+      }else{
+        return (field[0]);
+      }
+      }else{
+      return (field);
+    }
   }
 
   async publishedDataPubblicationDocDB(strQuery, next){
-    this.commonAxiosInstance.get(`/rest-services/published-data/publication/docdb/${strQuery}/`)
-    .then((response) => {
+    try{
+      const response = await this.commonAxiosInstance.get(`/rest-services/published-data/publication/docdb/${strQuery}/`)
       return next(null, response.data, response.headers);
-    })
-    .catch((err) => {
+    }
+    catch(err){
       return next(err, null, null);  
-    })
+    }
   }
-
-
 }
 
 
