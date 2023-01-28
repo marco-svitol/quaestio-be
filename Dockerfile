@@ -5,9 +5,9 @@ ENV NODE_ENV=production
 ARG opsbaseurl
 ARG opsclientid
 ARG opsclientsecret
-ENV OPSBASEURL  ${opsbaseurl}
-ENV OPSCLIENTID ${opsclientid}
-ENV OPSCLIENTSECRET ${opsclientsecret}
+ENV OPSBASEURL=${opsbaseurl}
+ENV OPSCLIENTID=${opsclientid}
+ENV OPSCLIENTSECRET=${opsclientsecret}
 
 WORKDIR /nodejs
 
