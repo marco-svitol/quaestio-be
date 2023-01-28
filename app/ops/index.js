@@ -71,23 +71,28 @@ module.exports = class opsService{
 
   async publishedDataSearch(strQuery, next){
     this.commonAxiosInstance.get("/rest-services/published-data/search?q="+strQuery)
-    .then((response) => {
-      //Range!
-      //Total results: ops:world-patent-data.ops:biblio-search.@total-result-count
-      //Iteration over:ops:world-patent-data.ops:biblio-search.ops:search-result.ops:publication-reference[].document-id.@document-id-type <--- docdb or other
-      //          ops:world-patent-data.ops:biblio-search.ops:search-result.ops:publication-reference[].document-id.country.$ +
-      //          ops:world-patent-data.ops:biblio-search.ops:search-result.ops:publication-reference[].document-id.doc-number.$          
-      //          ops:world-patent-data.ops:biblio-search.ops:search-result.ops:publication-reference[].document-id.kind.$
-      //
-      // and pass each one to publishedDataPubblicationDocDB
-      //
-      //Title: exchange-documents.exchange-document.bibliographic-data.invention-title.$ (language @lang)
-      //DocNumber: 
-      //Date: exchange-documents.exchange-document.bibliographic-data.publication-reference.document-id.date.$
-      //Abstract: exchange-documents.exchange-document.abstract.p.$
-      //Applicant: exchange-documents.exchange-document.bibliographic-data.parties.applicants.applicant[1].applicant-name.name.$
-      //Inventors: exchange-documents.exchange-document.bibliographic-data.parties.inventors.inventor[].name.$
-      //Url to OPS
+    .then(async (response) => {
+      //Range! 
+      let docs=[];
+      let opsLights=[];
+      for (const doc of response.data['ops:world-patent-data']['ops:biblio-search']['ops:search-result']['ops:publication-reference']){
+        let docid=doc['document-id']['country']['$']+'.'+doc['document-id']['doc-number']['$']+'.'+doc['document-id']['kind']['$'];
+        let docUrl=`https://worldwide.espacenet.com/publicationDetails/biblio?FT=D&CC=${doc['document-id']['country']['$']}&NR=${doc['document-id']['doc-number']['$']}${doc['document-id']['kind']['$']}&KC=${doc['document-id']['kind']['$']}`;
+        let doctype=doc['document-id']['@document-id-type'];
+        if (doctype==="docdb"){
+          await this.pubblicationDataFiltered(docid, "en", async(err, docData, opsLight) => {
+          if (docData){  
+              docs.push({"doc_num":docid,"type":"docdb","invention_title":docData.title,"date":docData.date,"abstract":docData.abstract,"applicant":docData.applicant,"inventor_name":docData.inventor,"ops_link":docUrl});
+              opsLights = [];
+              opsLights.push(opsLight);
+            }else{
+              throw (err);
+            }
+         })
+        }
+      };
+      return next(null, docs, opsLights);
+
       //Semaphors + quota
       return next(null, response.data, response.headers);
     })
