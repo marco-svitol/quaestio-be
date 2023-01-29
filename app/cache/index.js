@@ -13,21 +13,15 @@ module.exports.cacheMiddleware = function(req, res, next){ //Function used by Ro
 		res.setHeader('Content-Type', 'application/json')
 		res.send( cacheContent );
 		logger.info(`Cache hit with key ${String(key)}.`);//Response in ${perfy.end(rTracer.id())['time']} secs`)
-		logger.srvconsoledir(req,0)
 		return
 	}else{
 		res.sendResponse = res.send;
-		if (res.statusCode < 300 && cacheEnabled){
-			res.send = (body) => { //put in cache only if ther's no error in body
+		res.send = (body) => { //put in cache only if ther's no error in body
+			if (res.statusCode < 300 && cacheEnabled){
 				memCache.put(key,body,cacheTTLHours*(3600*1000))
 				logger.info(`Caching content with key ${String(key)} duration ${cacheTTLHours} hrs ; n. of CachedKeys: ${String(memCache.memsize())} ; CachedMemorySize ${niceBytes(memCache.exportJson().length)}`);
-				res.sendResponse(body);
 			}
-		}else{
-			res.send = (body) => {
-				res.sendResponse(body);
-				logger.info("send");
-			}
+			res.sendResponse(body);
 		}
 		next();
 	}

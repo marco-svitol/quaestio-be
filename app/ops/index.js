@@ -76,35 +76,40 @@ module.exports = class opsService{
       //Range! 
       let docs=[];
       let opsLights=[];
-      for (const doc of response.data['ops:world-patent-data']['ops:biblio-search']['ops:search-result']['ops:publication-reference']){
-        let docid=doc['document-id']['country']['$']+'.'+doc['document-id']['doc-number']['$']+'.'+doc['document-id']['kind']['$'];
-        let docUrl=`https://worldwide.espacenet.com/publicationDetails/biblio?FT=D&CC=${doc['document-id']['country']['$']}&NR=${doc['document-id']['doc-number']['$']}${doc['document-id']['kind']['$']}&KC=${doc['document-id']['kind']['$']}`;
-        let doctype=doc['document-id']['@document-id-type'];
-        if (doctype==="docdb"){
-          await this.pubblicationDataFiltered(docid, "en", async(err, docData, opsLight) => {
-          if (docData){  
-              docs.push({"doc_num":docid,"type":"docdb","invention_title":docData.title,"date":docData.date,"abstract":docData.abstract,"applicant":docData.applicant,"inventor_name":docData.inventor,"ops_link":docUrl});
-              opsLights = [];
-              opsLights.push(opsLight);
-            }else{
-              throw (err);
+      if (response){
+        opsLights.push(response.headers);
+        if (response.data){
+          let opsPublications = response.data['ops:world-patent-data']['ops:biblio-search']['ops:search-result']['ops:publication-reference'];
+          if (!opsPublications.length){
+            let singleDoc = opsPublications;
+            opsPublications = [];
+            opsPublications.push(singleDoc);
+          } 
+          for (const opsPublication of opsPublications){
+            let docid=opsPublication['document-id']['country']['$']+'.'+opsPublication['document-id']['doc-number']['$']+'.'+opsPublication['document-id']['kind']['$'];
+            let docUrl=`https://worldwide.espacenet.com/publicationDetails/biblio?FT=D&CC=${opsPublication['document-id']['country']['$']}&NR=${opsPublication['document-id']['doc-number']['$']}${opsPublication['document-id']['kind']['$']}&KC=${opsPublication['document-id']['kind']['$']}`;
+            let doctype=opsPublication['document-id']['@document-id-type'];
+            if (doctype==="docdb"){
+              await this.pubblicationDataFiltered(docid, "en", async(err, docData, opsLight) => {
+              if (docData){  
+                  docs.push({"doc_num":docid,"type":"docdb","invention_title":docData.title,"date":docData.date,"abstract":docData.abstract,"applicant":docData.applicant,"inventor_name":docData.inventor,"ops_link":docUrl});
+                  opsLights = [];
+                  opsLights.push(opsLight);
+                }else{
+                  throw (err);
+                }
+            })
             }
-         })
+          };
         }
-      };
+      }
       return next(null, docs, opsLights);
-
       //Semaphors + quota
-      //https://worldwide.espacenet.com/publicationDetails/biblio?FT=D&CC=US&NR=11552793&KC=B1"
-
-      //https://worldwide.espacenet.com/publicationDetails/biblio?FT=D&CC=KR&NR=20230006328&KC=A"
-      //https://worldwide.espacenet.com/publicationDetails/biblio?FT=D&CC=KR&NR=20230006328A&KC=A
-
-      //https://worldwide.espacenet.com/publicationDetails/biblio?II=0&ND=3&adjacent=true&locale=en_EP&FT=D&date=20230110&CC=KR&NR=20230006328A&KC=A
-
-
     })
     .catch((err) => {
+      if (err.response.status === 404){
+        return next(null, [], err.response.headers)
+      }
       return next(err, null, null);  
     })
   }

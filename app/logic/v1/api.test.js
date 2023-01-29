@@ -1,21 +1,11 @@
-//const { stream } = require('../logger');
 const logger=require('../../logger'); 
-const msgServerError = 'Server error';
 const randomQuote = require ('random-quotes');
 
-
-async function getCurrentHPAmaxReplicas(){
-	//const hpa = await api.readNamespacedHorizontalPodAutoscaler(hpaname, namespace);
-	return 1;
-}
-
 exports.test = async (req, res) => { 
-	logger.srvconsoledir(req,start=0);
 	res.status(200).send({quote: randomQuote.default().body, author: randomQuote.default().author})
 }
 
 exports.opstest = async (req, res) => { 
-	logger.srvconsoledir(req,start=0);
 	logger.debug(`OPSBASEURL:${global.config_data.app.opsBaseUrl} OPSCLIENTID:${global.config_data.app.opsClientID} OPSCLIENTSECRET:${global.config_data.app.opsClientSecret}`);
 	res.status(200).send("Check logs");
 }
@@ -192,6 +182,5 @@ const testreponse = [
 	]
 	
 exports.search = async(req, res) => {
-	logger.srvconsoledir(req, start=0);
 	res.status(200).json(testreponse); 
 }

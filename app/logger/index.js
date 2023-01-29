@@ -68,12 +68,18 @@ var logger = winston.createLogger({
 module.exports=logger;
 
 module.exports.srvconsoledir = function (request, start=1, err = 0){ //internal: log service call info to console
-	let srvname = request.path;
+  let srvname = request.path;
   if (err==0){
 		if (start){
-			let params = JSON.stringify(request.body)
 			if (srvname == '/health' || srvname == '/metrics'){return;}  //do not print health service to prevent logs flood! 
-			this.info(`${srvname} service request from ${request.connection.remoteAddress} : ${params}`)
+			let msg;
+      if (request.method === 'POST'){
+        let params = JSON.stringify(request.body)
+        msg=`POST ${srvname} request from ${request.connection.remoteAddress}. Body:${params}`;
+      }else{
+        msg=`GET request ${request.originalUrl} from ${request.connection.remoteAddress}`;
+      }
+      this.info(msg);
       perfy.start(rTracer.id());
 		}else{
       let perfSecs = perfy.end(rTracer.id())['time'];

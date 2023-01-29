@@ -6,14 +6,22 @@ const opsQuaestio = require("../../consts").opsQuaestio;
 // const parser = new XMLParser();
 
 exports.search = async(req, res) => {
-	logger.srvconsoledir(req, start=0);
 	//validate params middleware??
 	reqQuery="";
 	if (req.query.ti){reqQuery+=`ti=${req.query.ti} AND `}
 	//if (req.query.tecarea){reqQuery+=`cpc=${req.query.tecarea} AND `}
 	//if (req.query.pubnum){reqQuery+=`pn=${req.query.pubnum} AND `}
 	if (req.query.txt){reqQuery+=`txt=${req.query.txt} AND `}
-	if (req.query.pdfrom){reqQuery+=`pd within "${req.query.pdfrom} ${req.query.pdto}" AND `}
+	if (req.query.pdfrom){
+		var date_regex = /^(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|1\d|2\d|3[01])$/;
+		let pdFrom = req.query.pdfrom;
+		let pdTo = req.query.pdto;
+		pdFromValid = date_regex.test(pdFrom);
+		pdToValid = date_regex.test(pdTo);
+		if (pdFromValid && !pdToValid){pdTo = pdFrom}
+		else if (!pdFromValid && pdToValid){pdFrom = pdTo};
+		if (pdFromValid || pdToValid){reqQuery+=`pd within "${pdFrom} ${pdTo}" AND `}
+	}
 	//if (req.query.pa){reqQuery+=`pa=${req.query.applicant} AND `}
 	reqQuery=reqQuery.slice(0,-5);
 	logger.verbose(`Parameters: ${reqQuery}`);
@@ -40,7 +48,6 @@ exports.search = async(req, res) => {
 }
 
 exports.publication = async(req, res) => {
-	logger.srvconsoledir(req, start=0);
 	//validate params middleware??
 	reqQuery="";
 	if (req.query.id){reqQuery+=`${req.query.id}`}
