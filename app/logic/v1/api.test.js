@@ -1,5 +1,12 @@
 const logger=require('../../logger'); 
 const randomQuote = require ('random-quotes');
+const cacheMiddleware = require('../../cache').cacheMiddleware;
+const cacheMiddlewareReset = require('../../cache').cacheMiddlewareReset;
+
+exports.cacheReset = async (req, res) => {
+	cacheMiddlewareReset();
+	res.status(200).send("Cache cleared");
+}
 
 exports.test = async (req, res) => { 
 	res.status(200).send({quote: randomQuote.default().body, author: randomQuote.default().author})

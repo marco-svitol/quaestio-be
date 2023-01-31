@@ -107,8 +107,10 @@ module.exports = class opsService{
       //Semaphors + quota
     })
     .catch((err) => {
-      if (err.response.status === 404){
-        return next(null, [], err.response.headers)
+      if (err.response){
+        if (err.response.status === 404){
+          return next(null, [], err.response.headers)
+        }
       }
       return next(err, null, null);  
     })

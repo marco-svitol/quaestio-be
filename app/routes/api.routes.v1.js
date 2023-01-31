@@ -10,9 +10,10 @@ module.exports = myapp => {
 
   cacheMiddleware.unless = unless; 
   routerapp.use(cacheMiddleware.unless({
-    path: ['/test']
+    path: ['/test','/cachereset']
   }))
 
+  routerapp.post("/cachereset",       apitest.cacheReset);
   routerapp.get("/test",              apitest.test );
   routerapp.get("/opstest",           apitest.opstest );
   routerapp.get("/fsearch",           apitest.search );

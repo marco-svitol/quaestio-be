@@ -27,6 +27,12 @@ module.exports.cacheMiddleware = function(req, res, next){ //Function used by Ro
 	}
 }
 
+module.exports.cacheMiddlewareReset = function() {
+	logger.debug(`Cache had ${String(memCache.memsize())} CachedKeys and was ${niceBytes(memCache.exportJson().length)}.`);
+	memCache.clear();
+	logger.debug(`Cache is now ${niceBytes(memCache.exportJson().length)}.`);
+}
+
 function niceBytes(x){ //include a decimal point and a tenths-place digit if presenting less than ten of KB or greater units
 	let l = 0, n = parseInt(x, 10) || 0;
 	while(n >= 1024 && ++l)
