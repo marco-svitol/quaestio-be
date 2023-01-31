@@ -128,14 +128,24 @@ module.exports = class opsService{
         docData.date      = this.filterArrayLang(dates)['date']['$'];
         
         const abstracts   = body['ops:world-patent-data']['exchange-documents']['exchange-document']['abstract'];
-        docData.abstract  = this.filterArrayLang(abstracts,lang)['p']['$'];
+        if (abstracts) {
+          docData.abstract  = this.filterArrayLang(abstracts,lang)['p']['$'];
+        }else{
+          docData.abstract  = "";
+          logger.debug(`Abstract is missing for document ${docid}: ${docData.title}`);
+        }
         
         const applicants  = body['ops:world-patent-data']['exchange-documents']['exchange-document']['bibliographic-data']['parties']['applicants']['applicant'];
         docData.applicant = this.filterArrayLang(applicants)['applicant-name']['name']['$'];
         
-        const inventors   =  body['ops:world-patent-data']['exchange-documents']['exchange-document']['bibliographic-data']['parties']['inventors']['inventor'];
-        docData.inventor  = this.filterArrayLang(inventors)['inventor-name']['name']['$'];
-        
+        const inventors   =  body['ops:world-patent-data']['exchange-documents']['exchange-document']['bibliographic-data']['parties']['inventors'];
+        if (inventors) {
+          docData.inventor  = this.filterArrayLang(inventors['inventor'])['inventor-name']['name']['$'];
+        }else{
+          docData.inventor = "";
+          logger.debug(`Inventor is missing for document ${docid}: ${docData.title}`);
+        }
+
         return next(null, docData, headers);
       }else{
         return (err)
