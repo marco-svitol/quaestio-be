@@ -114,25 +114,25 @@ module.exports = class opsService{
     let docData={};
 
     const titles      = body['bibliographic-data']['invention-title']; 
-    docData.title = this.filterArrayLang(titles, lang);
+    docData.title = this.filterArrayLang(titles, lang)['$'];
 
     const dates       = body['bibliographic-data']['publication-reference']['document-id'];
-    docData.date      = this.filterArrayLang(dates)['date'];
+    docData.date      = this.filterArrayLang(dates)['date']['$'];
 
     const abstracts   = body['abstract'];
     if (abstracts) {
-      docData.abstract  = this.filterArrayLang(abstracts,lang)['p'];
+      docData.abstract  = this.filterArrayLang(abstracts,lang)['p']['$'];
     }else{
       docData.abstract  = "";
       logger.debug(`Abstract is missing for document docid: ${docData.title}`);
     }
 
     const applicants  = body['bibliographic-data']['parties']['applicants']['applicant'];
-    docData.applicant = this.filterArrayLang(applicants)['applicant-name']['name'];
+    docData.applicant = this.filterArrayLang(applicants)['applicant-name']['name']['$'];
 
     const inventors   =  body['bibliographic-data']['parties']['inventors'];
     if (inventors) {
-      docData.inventor  = this.filterArrayLang(inventors['inventor'])['inventor-name']['name'];
+      docData.inventor  = this.filterArrayLang(inventors['inventor'])['inventor-name']['name']['$'];
     }else{
       docData.inventor = "";
       logger.debug(`Inventor is missing for document docid: ${docData.title}`);
