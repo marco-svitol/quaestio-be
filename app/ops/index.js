@@ -80,6 +80,11 @@ module.exports = class opsService{
         opsLights.push(response.headers);
         if (response.data){
           let opsPublications = response.data['ops:world-patent-data']['ops:biblio-search']['ops:search-result']['exchange-documents'];
+          if (!opsPublications.length){
+            let singleDoc = opsPublications;
+            opsPublications = [];
+            opsPublications.push(singleDoc);
+          } 
           for (let opsPublication of opsPublications){
             opsPublication=opsPublication['exchange-document'];
             let docid=opsPublication['@country']+'.'+opsPublication['@doc-number']+'.'+opsPublication['@kind'];
