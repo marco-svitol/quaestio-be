@@ -71,7 +71,7 @@ module.exports = class opsService{
   }
 
   async publishedDataSearch(strQuery, next){
-    this.commonAxiosInstance.get("/rest-services/published-data/search?q="+strQuery)
+    this.commonAxiosInstance.get("/rest-services/published-data/search/biblio?q="+strQuery)
     .then(async (response) => {
       //Range! 
       let docs=[];
@@ -79,27 +79,21 @@ module.exports = class opsService{
       if (response){
         opsLights.push(response.headers);
         if (response.data){
-          let opsPublications = response.data['ops:world-patent-data']['ops:biblio-search']['ops:search-result']['ops:publication-reference'];
-          if (!opsPublications.length){
-            let singleDoc = opsPublications;
-            opsPublications = [];
-            opsPublications.push(singleDoc);
-          } 
-          for (const opsPublication of opsPublications){
-            let docid=opsPublication['document-id']['country']['$']+'.'+opsPublication['document-id']['doc-number']['$']+'.'+opsPublication['document-id']['kind']['$'];
-            let docUrl=`https://worldwide.espacenet.com/publicationDetails/biblio?FT=D&CC=${opsPublication['document-id']['country']['$']}&NR=${opsPublication['document-id']['doc-number']['$']}${opsPublication['document-id']['kind']['$']}&KC=${opsPublication['document-id']['kind']['$']}`;
-            let doctype=opsPublication['document-id']['@document-id-type'];
-            if (doctype==="docdb"){
-              await this.pubblicationDataFiltered(docid, "en", async(err, docData, opsLight) => {
+          let opsPublications = response.data['ops:world-patent-data']['ops:biblio-search']['ops:search-result']['exchange-documents'];
+          for (let opsPublication of opsPublications){
+            opsPublication=opsPublication['exchange-document'];
+            let docid=opsPublication['@country']+'.'+opsPublication['@doc-number']+'.'+opsPublication['@kind'];
+            let docUrl=`https://worldwide.espacenet.com/publicationDetails/biblio?FT=D&CC=${opsPublication['country']}&NR=${opsPublication['doc-number']}${opsPublication['kind']}&KC=${opsPublication['kind']}`;
+            //let doctype=opsPublication['@document-id-type'];
+            //if (doctype==="docdb"){
+              await this.pubblicationDataFiltered(opsPublication, "en", async(err, docData) => {
               if (docData){  
                   docs.push({"doc_num":docid,"type":"docdb","invention_title":docData.title,"date":docData.date,"abstract":docData.abstract,"applicant":docData.applicant,"inventor_name":docData.inventor,"ops_link":docUrl});
-                  opsLights = [];
-                  opsLights.push(opsLight);
                 }else{
                   throw (err);
                 }
             })
-            }
+            //}
           };
         }
       }
@@ -116,41 +110,34 @@ module.exports = class opsService{
     })
   }
 
-  async pubblicationDataFiltered(docid, lang, next){
-    await this.publishedDataPubblicationDocDB(docid, async (err, body, headers) => {
-      if (!err){
-        let docData={};
+  async pubblicationDataFiltered(body, lang, next){
+    let docData={};
 
-        const titles      = body['ops:world-patent-data']['exchange-documents']['exchange-document']['bibliographic-data']['invention-title']; 
-        docData.title = this.filterArrayLang(titles, lang)['$'];
+    const titles      = body['bibliographic-data']['invention-title']; 
+    docData.title = this.filterArrayLang(titles, lang);
 
-        const dates       = body['ops:world-patent-data']['exchange-documents']['exchange-document']['bibliographic-data']['publication-reference']['document-id'];
-        docData.date      = this.filterArrayLang(dates)['date']['$'];
-        
-        const abstracts   = body['ops:world-patent-data']['exchange-documents']['exchange-document']['abstract'];
-        if (abstracts) {
-          docData.abstract  = this.filterArrayLang(abstracts,lang)['p']['$'];
-        }else{
-          docData.abstract  = "";
-          logger.debug(`Abstract is missing for document ${docid}: ${docData.title}`);
-        }
-        
-        const applicants  = body['ops:world-patent-data']['exchange-documents']['exchange-document']['bibliographic-data']['parties']['applicants']['applicant'];
-        docData.applicant = this.filterArrayLang(applicants)['applicant-name']['name']['$'];
-        
-        const inventors   =  body['ops:world-patent-data']['exchange-documents']['exchange-document']['bibliographic-data']['parties']['inventors'];
-        if (inventors) {
-          docData.inventor  = this.filterArrayLang(inventors['inventor'])['inventor-name']['name']['$'];
-        }else{
-          docData.inventor = "";
-          logger.debug(`Inventor is missing for document ${docid}: ${docData.title}`);
-        }
+    const dates       = body['bibliographic-data']['publication-reference']['document-id'];
+    docData.date      = this.filterArrayLang(dates)['date'];
 
-        return next(null, docData, headers);
-      }else{
-        return (err)
-      }
-    })
+    const abstracts   = body['abstract'];
+    if (abstracts) {
+      docData.abstract  = this.filterArrayLang(abstracts,lang)['p'];
+    }else{
+      docData.abstract  = "";
+      logger.debug(`Abstract is missing for document docid: ${docData.title}`);
+    }
+
+    const applicants  = body['bibliographic-data']['parties']['applicants']['applicant'];
+    docData.applicant = this.filterArrayLang(applicants)['applicant-name']['name'];
+
+    const inventors   =  body['bibliographic-data']['parties']['inventors'];
+    if (inventors) {
+      docData.inventor  = this.filterArrayLang(inventors['inventor'])['inventor-name']['name'];
+    }else{
+      docData.inventor = "";
+      logger.debug(`Inventor is missing for document docid: ${docData.title}`);
+    }
+    return next(null, docData);
   }
 
   filterArrayLang(field, lang){
