@@ -53,7 +53,6 @@ module.exports = class opsService{
 
     newAxios.interceptors.response.use(
       (response) => {return response},
-
       async (error) => {
         if (error.response && error.config) {
           const statuscode = error.response.status;
@@ -88,7 +87,7 @@ module.exports = class opsService{
           for (let opsPublication of opsPublications){
             opsPublication=opsPublication['exchange-document'];
             let docid=opsPublication['@country']+'.'+opsPublication['@doc-number']+'.'+opsPublication['@kind'];
-            let docUrl=`https://worldwide.espacenet.com/publicationDetails/biblio?FT=D&CC=${opsPublication['country']}&NR=${opsPublication['doc-number']}${opsPublication['kind']}&KC=${opsPublication['kind']}`;
+            let docUrl=`https://worldwide.espacenet.com/publicationDetails/biblio?FT=D&CC=${opsPublication['@country']}&NR=${opsPublication['@doc-number']}${opsPublication['@kind']}&KC=${opsPublication['@kind']}`;
             //let doctype=opsPublication['@document-id-type'];
             //if (doctype==="docdb"){
               await this.pubblicationDataFiltered(opsPublication, "en", async(err, docData) => {
@@ -118,26 +117,32 @@ module.exports = class opsService{
   async pubblicationDataFiltered(body, lang, next){
     let docData={};
 
+    
     const titles      = body['bibliographic-data']['invention-title']; 
-    docData.title = this.filterArrayLang(titles, lang)['$'];
+    docData.title = this.filterArrayLang(titles, lang)[0]['$'];
 
     const dates       = body['bibliographic-data']['publication-reference']['document-id'];
-    docData.date      = this.filterArrayLang(dates)['date']['$'];
+    docData.date      = this.filterArrayLang(dates)[0]['date']['$'];
 
     const abstracts   = body['abstract'];
     if (abstracts) {
-      docData.abstract  = this.filterArrayLang(abstracts,lang)['p']['$'];
+      docData.abstract  = this.filterArrayLang(abstracts,lang)[0]['p']['$'];
     }else{
       docData.abstract  = "";
       logger.debug(`Abstract is missing for document docid: ${docData.title}`);
     }
 
     const applicants  = body['bibliographic-data']['parties']['applicants']['applicant'];
-    docData.applicant = this.filterArrayLang(applicants)['applicant-name']['name']['$'];
+    docData.applicant = this.filterArrayLang(applicants)[0]['applicant-name']['name']['$'];
 
     const inventors   =  body['bibliographic-data']['parties']['inventors'];
     if (inventors) {
-      docData.inventor  = this.filterArrayLang(inventors['inventor'])['inventor-name']['name']['$'];
+      const inventorswithlength = this.filterArrayLang(inventors['inventor']);
+      docData.inventor  = inventorswithlength[0]['inventor-name']['name']['$'];
+      
+      if (inventorswithlength[1]){
+        docData.inventor += ` (+${inventorswithlength[1]})`;
+      }
     }else{
       docData.inventor = "";
       logger.debug(`Inventor is missing for document docid: ${docData.title}`);
@@ -148,12 +153,12 @@ module.exports = class opsService{
   filterArrayLang(field, lang){
     if (Array.isArray(field)){
       if (lang){
-        return (field.filter(d=>d['@lang']==lang)[0]);
+        return [field.filter(d=>d['@lang']==lang)[0], field.length];
       }else{
-        return (field[0]);
+        return [field[0],field.length];
       }
       }else{
-      return (field);
+      return [field,null];
     }
   }
 
