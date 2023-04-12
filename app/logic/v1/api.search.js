@@ -1,6 +1,7 @@
 const logger=require('../../logger'); 
-const msgServerError = 'Internal server error';
+const msgServerError = require('../../consts').msgServerError;
 const opsQuaestio = require("../../consts").opsQuaestio;
+const db=require('../../database');
 // const XMLValidator = require('fast-xml-parser').XMLValidator;
 // const XMLParser = require('fast-xml-parser').XMLParser;
 // const parser = new XMLParser();
@@ -28,7 +29,9 @@ exports.search = async(req, res) => {
 	opsQuaestio.publishedDataSearch(reqQuery, (err,body, headers) => {
 		if (!err) {
 			logger.debug(`Headers: ${headers}`);
-			res.status(200).json(body);
+			var userinfo = {"quotawarning": "green"};
+			body.push(userinfo);
+			res.status(200).send(body);
 			// const result = XMLValidator.validate(body);
 			// if (result === true){
 			// 	logger.verbose("XML validation passed.")
@@ -60,5 +63,17 @@ exports.publication = async(req, res) => {
 			logger.error(`publication: ${err.message}. Stack: ${err.stack}`)
 			res.status(500).send(msgServerError+" : "+err.message)
 		}	
+	})
+}
+
+exports.userprofile = async(req, res) => {
+	//validate params middleware??
+	db._userprofile(req.query.uid, (err, qresult) => {
+		if(err){
+			logger.error(`userprofile: ${msgServerError}: ${err}`);
+			res.status(500).json({message: `${this.userprofile.name}: ${msgServerError}`});
+		}else{
+			res.status(200).json(qresult.userprofile);
+		}
 	})
 }

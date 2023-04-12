@@ -71,10 +71,16 @@ jobs:
               "opsbaseurl=${{ secrets.OPSBASEURL }}"
               "opsclientid=${{ secrets.OPSCLIENTID }}"
               "opsclientsecret=${{ secrets.OPSCLIENTSECRET }}"
-          secrets: |
-            "opsbaseurl=${{ secrets.OPSBASEURL }}"
-            "opsclientid=${{ secrets.OPSCLIENTID }}"
-            "opsclientsecret=${{ secrets.OPSCLIENTSECRET }}"
+              "sqlconfig_dbuser=${{ secrets.SQLCONFIG_DBUSER }}"
+              "sqlconfig_dbpw=${{ secrets.SQLCONFIG_DBPW }}"
+              "sqlconfig_dbserver=${{ secrets.SQLCONFIG_DBSERVER }}"
+              "sqlconfig_dbname=${{ secrets.SQLCONFIG_DBNAME }}"
+              "token_secret=${{ secrets.TOKEN_SECRET }}"
+              "refresh_token_secret=${{ secrets.REFRESH_TOKEN_SECRET }}"
+          # secrets: |
+          #   "opsbaseurl=${{ secrets.OPSBASEURL }}"
+          #   "opsclientid=${{ secrets.OPSCLIENTID }}"
+          #   "opsclientsecret=${{ secrets.OPSCLIENTSECRET }}"
 
   deploy:
     permissions:

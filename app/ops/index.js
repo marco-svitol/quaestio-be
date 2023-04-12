@@ -92,7 +92,7 @@ module.exports = class opsService{
             //if (doctype==="docdb"){
               await this.pubblicationDataFiltered(opsPublication, "en", async(err, docData) => {
               if (docData){  
-                  docs.push({"doc_num":docid,"type":"docdb","invention_title":docData.title,"date":docData.date,"abstract":docData.abstract,"applicant":docData.applicant,"inventor_name":docData.inventor,"ops_link":docUrl});
+                  docs.push({"doc_num":docid,"type":"docdb","invention_title":docData.title,"date":docData.date,"abstract":docData.abstract,"applicant":docData.applicant,"inventor_name":docData.inventor,"ops_link":docUrl,"read_history":"new"});
                 }else{
                   throw (err);
                 }

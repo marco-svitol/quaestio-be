@@ -18,7 +18,18 @@
             "server"            : "",
             "database"          : "",
             "requestTimeout"    : 180000,
-            "multipleStatements": true
+            "multipleStatements": true,
+            "connectionTimeout ": 60000,
+            "acquireTimeoutMillis" : 60000,
+            "idleTimeoutMillis" : 600000,
+            "arrayRowMode " : true,
+            "parseJSON" : true
+        },
+        "tokenProperties": {
+            "secret" : "",
+            "tokenTimeout": 600,
+            "refresh_secret" : "",
+            "refresh_tokenTimeout" : 172800
         }
     },
     "production" : {
