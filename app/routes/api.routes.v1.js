@@ -6,11 +6,15 @@ module.exports = myapp => {
   const apitest         = require("../logic/v1/api.test");
   const apisearch       = require("../logic/v1/api.search")
   const apihealth       = require("../logic/health");
+  const apiauth         = require("../logic/v1/api.auth");
   const cacheMiddleware = require('../cache').cacheMiddleware;
+
+  apiauth.checkJWT.unless = unless;
+  routerapp.use(apiauth.checkJWT.unless({path: ['/api/v1/test','/api/v1/cachereset','/api/v1/auth/login','/api/v1/auth/refreshtoken']}));
 
   cacheMiddleware.unless = unless; 
   routerapp.use(cacheMiddleware.unless({
-    path: ['/api/v1/test','/api/v1/cachereset']
+    path: ['/api/v1/test','/api/v1/cachereset','/api/v1/auth/login','/api/v1/auth/refreshtoken']
   }))
 
   routerapp.post("/cachereset",       apitest.cacheReset);
@@ -19,6 +23,9 @@ module.exports = myapp => {
   routerapp.get("/fsearch",           apitest.search );
   routerapp.get("/search",            apisearch.search );
   routerapp.get("/publication",       apisearch.publication );
+  routerapp.get("/userprofile",      apisearch.userprofile);
+  routerapp.get("/auth/login",             apiauth.login);
+  routerapp.get("/auth/refreshtoken",      apiauth.refreshtoken);
   myapp.use('/api/v1', routerapp);
   // routerappbeta.get("/search",        apisearch.search );
   // routerappbeta.get("/publication",       apisearch.publication );

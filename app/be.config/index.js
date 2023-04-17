@@ -18,6 +18,8 @@ finalConfig.sqlConfigPool.user      = process.env.SQLCONFIG_DBUSER;
 finalConfig.sqlConfigPool.password  = process.env.SQLCONFIG_DBPW;
 finalConfig.sqlConfigPool.server    = process.env.SQLCONFIG_DBSERVER;
 finalConfig.sqlConfigPool.database  = process.env.SQLCONFIG_DBNAME;
+finalConfig.tokenProperties.secret  = process.env.TOKEN_SECRET;
+finalConfig.tokenProperties.refresh_secret = process.env.REFRESH_TOKEN_SECRET;
 
 if (!finalConfig.app.opsBaseUrl) {console.log ("Fatal error: OPSBASEURL missing");};
 if (!finalConfig.app.opsClientID) {console.log ("Fatal error: OPSCLIENTID missing");};

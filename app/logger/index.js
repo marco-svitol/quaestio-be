@@ -79,12 +79,12 @@ module.exports.srvconsoledir = function (request, start=1, err = 0){ //internal:
       }else{
         msg=`GET request ${request.originalUrl} from ${request.connection.remoteAddress}`;
       }
-      this.info(msg);
+      this.debug(msg);
       perfy.start(rTracer.id());
 		}else{
       let perfSecs = perfy.end(rTracer.id())['time'];
       let perfMsg = `${perfSecs} secs`
-      this.info(`${srvname} service completed for ${request.hostname} in ${perfMsg}`)
+      this.debug(`${srvname} service completed for ${request.hostname} in ${perfMsg}`)
     }
   }else{
 		this.error(`${srvname} service requested from ${request.hostname} raised this error: ${err}`)
