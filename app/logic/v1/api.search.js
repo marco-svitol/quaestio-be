@@ -9,8 +9,8 @@ const db=require('../../database');
 exports.search = async(req, res) => {
 	//validate params middleware??
 	reqQuery="";
-	if (req.query.ti){reqQuery+=`ti=${req.query.ti} AND `}
-	//if (req.query.tecarea){reqQuery+=`cpc=${req.query.tecarea} AND `}
+	if (req.query.pa){reqQuery+=`pa=${req.query.pa} AND `}
+	if (req.query.tecarea){reqQuery+=`cpc=${req.query.tecarea} AND `}
 	//if (req.query.pubnum){reqQuery+=`pn=${req.query.pubnum} AND `}
 	if (req.query.txt){reqQuery+=`txt=${req.query.txt} AND `}
 	if (req.query.pdfrom){

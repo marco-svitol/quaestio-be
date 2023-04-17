@@ -14,7 +14,7 @@ module.exports = myapp => {
 
   cacheMiddleware.unless = unless; 
   routerapp.use(cacheMiddleware.unless({
-    path: ['/api/v1/test','/api/v1/cachereset','/api/v1/auth/login','/api/v1/auth/refreshtoken']
+    path: ['/api/v1/test','/api/v1/cachereset','/api/v1/auth/login','/api/v1/auth/refreshtoken','/api/v1/opstest']
   }))
 
   routerapp.post("/cachereset",       apitest.cacheReset);
