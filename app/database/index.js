@@ -6,7 +6,7 @@ const sql = require('mssql');
 const pool = new sql.ConnectionPool(sqlConfigPool);
 const poolConnect = pool.connect()
   .catch(err => {
-		logger.error('DB connection : ', err)
+		logger.error(`DB connection to ${sqlConfigPool.server}/${sqlConfigPool.database}: `, err)
 		process.exit(1);
 	})
 	.then(function(conn) {  //create SQL connection pool
