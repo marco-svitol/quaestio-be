@@ -21,6 +21,9 @@ finalConfig.sqlConfigPool.database  = process.env.SQLCONFIG_DBNAME;
 finalConfig.tokenProperties.secret  = process.env.TOKEN_SECRET;
 finalConfig.tokenProperties.refresh_secret = process.env.REFRESH_TOKEN_SECRET;
 
+finalConfig.app.loglevel              = process.env.LOGLEVEL;
+finalConfig.app.serverPort              = process.env.SERVERPORT;
+
 if (!finalConfig.app.opsBaseUrl) {console.log ("Fatal error: OPSBASEURL missing");};
 if (!finalConfig.app.opsClientID) {console.log ("Fatal error: OPSCLIENTID missing");};
 if (!finalConfig.app.opsClientSecret) {console.log ("Fatal error: OPSCLIENTSECRET missing");};
