@@ -56,12 +56,12 @@ exports.checkJWT = async function (req, res, next) { //Function used by Router t
 	}
 }
 
-exports.refreshtoken = async function (req, res) {
+exports.refresh = async function (req, res) {
 	jwt.verify(req.query.reftoken, tokenProperties.refresh_secret, (err, decoded) => {
 		if (err) {
-			logger.error(`refreshtoken: ${err.name} : ${err.message}`);
+			logger.error(`refresh: ${err.name} : ${err.message}`);
 			res.statusMessage = 'You are not authorized';
-			return res.status(401).json({message:`${this.refreshtoken.name}:${err.name} : ${err.message}`})
+			return res.status(401).json({message:`refresh :${err.name} : ${err.message}`})
 		} else if (decoded && (decoded.uid == req.query.uid)){ //check that uid in token matches userid in parameters
 			var token = createToken(req.query.uid, tokenProperties.secret, tokenProperties.tokenTimeout);
 			d = new Date(decoded.exp*1000);

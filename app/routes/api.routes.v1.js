@@ -10,11 +10,11 @@ module.exports = myapp => {
   const cacheMiddleware = require('../cache').cacheMiddleware;
 
   apiauth.checkJWT.unless = unless;
-  routerapp.use(apiauth.checkJWT.unless({path: ['/api/v1/test','/api/v1/cachereset','/api/v1/auth/login','/api/v1/auth/refreshtoken']}));
+  routerapp.use(apiauth.checkJWT.unless({path: ['/api/v1/test','/api/v1/cachereset','/api/v1/auth/login','/api/v1/auth/refresh']}));
 
   cacheMiddleware.unless = unless; 
   routerapp.use(cacheMiddleware.unless({
-    path: ['/api/v1/test','/api/v1/cachereset','/api/v1/auth/login','/api/v1/auth/refreshtoken','/api/v1/opstest']
+    path: ['/api/v1/test','/api/v1/cachereset','/api/v1/auth/login','/api/v1/auth/refresh','/api/v1/opstest']
   }))
 
   routerapp.post("/cachereset",       apitest.cacheReset);
@@ -25,7 +25,7 @@ module.exports = myapp => {
   routerapp.get("/publication",       apisearch.publication );
   routerapp.get("/userprofile",      apisearch.userprofile);
   routerapp.get("/auth/login",             apiauth.login);
-  routerapp.get("/auth/refreshtoken",      apiauth.refreshtoken);
+  routerapp.get("/auth/refresh",      apiauth.refresh);
   myapp.use('/api/v1', routerapp);
   // routerappbeta.get("/search",        apisearch.search );
   // routerappbeta.get("/publication",       apisearch.publication );
