@@ -1,7 +1,10 @@
 FROM node:alpine
 
 ENV SERVERPORT=80
+ENV LOGLEVEL=debug
+
 ENV NODE_ENV=production
+
 ARG opsbaseurl
 ARG opsclientid
 ARG opsclientsecret
