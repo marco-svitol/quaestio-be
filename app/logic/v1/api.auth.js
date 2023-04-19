@@ -33,9 +33,11 @@ function createToken(uid, secret, timeout){
 }
 
 exports.checkJWT = async function (req, res, next) { //Function used by Router to verify token
-	if (req.headers.authorization) {// check headers params
-		logger.verbose (req.headers.authorization)
-		jwt.verify(req.headers.authorization, tokenProperties.secret, function (err, decoded) {  // check valid token
+	if (req.headers['x-access-token'] || req.headers['authorization']) {// check headers params
+		let token = req.headers['x-access-token'] || req.headers['authorization']; 
+		token = token.replace(/^Bearer\s+/, "");
+		logger.verbose (token)
+		jwt.verify(token, tokenProperties.secret, function (err, decoded) {  // check valid token
 			if (err) {
 				logger.error(`checkJWT: ${err.name}: ${err.message}`);
 				res.statusMessage = 'You are not authorized';
