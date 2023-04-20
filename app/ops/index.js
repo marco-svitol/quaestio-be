@@ -92,7 +92,15 @@ module.exports = class opsService{
             //if (doctype==="docdb"){
               await this.pubblicationDataFiltered(opsPublication, "en", async(err, docData) => {
               if (docData){  
-                  docs.push({"doc_num":docid,"type":"docdb","invention_title":docData.title,"date":docData.date,"abstract":docData.abstract,"applicant":docData.applicant,"inventor_name":docData.inventor,"ops_link":docUrl,"read_history":"new"});
+                  //DEBUG
+                  // create an array of three values
+                  const arr = ["new", "listed", "viewed"];
+                  // generate a random index between 0 and 2
+                  const randomIndex = Math.floor(Math.random() * arr.length);
+                  // retrieve the value at the randomly generated index
+                  const randomValue = arr[randomIndex];
+                  //-------
+                  docs.push({"doc_num":docid,"type":"docdb","invention_title":docData.title,"date":docData.date,"abstract":docData.abstract,"applicant":docData.applicant,"inventor_name":docData.inventor,"ops_link":docUrl,"read_history":randomValue});
                 }else{
                   throw (err);
                 }
