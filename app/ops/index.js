@@ -1,6 +1,7 @@
 const axios=require('axios');
 const { id } = require('cls-rtracer');
 const logger=require('../logger'); 
+const opsDOCURL = global.config_data.app.opsDOCURL;
 
 //Authentication Axios instance
 let authParams = new URLSearchParams({grant_type : 'client_credentials'});
@@ -87,7 +88,7 @@ module.exports = class opsService{
           for (let opsPublication of opsPublications){
             opsPublication=opsPublication['exchange-document'];
             let docid=opsPublication['@country']+'.'+opsPublication['@doc-number']+'.'+opsPublication['@kind'];
-            let docUrl=`https://worldwide.espacenet.com/publicationDetails/biblio?FT=D&CC=${opsPublication['@country']}&NR=${opsPublication['@doc-number']}${opsPublication['@kind']}&KC=${opsPublication['@kind']}`;
+            let docUrl= getLinkFromDocId(docid);
             //let doctype=opsPublication['@document-id-type'];
             //if (doctype==="docdb"){
               await this.pubblicationDataFiltered(opsPublication, "en", async(err, docData) => {
@@ -120,6 +121,11 @@ module.exports = class opsService{
       }
       return next(err, null, null);  
     })
+  }
+
+  getLinkFromDocId(docid){
+    let docidSplit = docid.split(".");
+    return docUrl=`${opsDOCURL}?FT=D&CC=${docidSplit[0]}&NR=${docidSplit[1]}${docidSplit[2]}&KC=${docidSplit[2]}`;
   }
 
   async pubblicationDataFiltered(body, lang, next){

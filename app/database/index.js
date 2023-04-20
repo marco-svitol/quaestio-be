@@ -63,6 +63,30 @@ module.exports._userprofile = async function(uid, next){
     })
 }
 
+module.exports._updatehistory = async function(uid, next){
+  var dbRequest = await this.poolrequest();
+  dbRequest.input('uid', sql.Int, uid);
+  dbRequest.input('docid', sql.NVarChar, docid);
+  var strQuery = `
+IF EXISTS (SELECT 1 FROM doc_history WHERE uid = @uid AND docid = @docid)  
+BEGIN  
+	UPDATE doc_history   
+	SET status = 2  
+	WHERE uid = @uid AND docid = @docid;  
+END  
+ELSE  
+BEGIN  
+	  INSERT INTO doc_history (uid, docid) VALUES (@uid, @docid)
+END`
+  dbRequest.query(strQuery)
+    .then(() => {
+      next(null);
+    })
+    .catch(err => {
+      next(err);
+    })
+}
+
 // module.exports._mainview = function (next) {
 //   let strQuery = `CALL pcpMainView();`
 //   let i = 0

@@ -24,7 +24,7 @@ exports.search = async(req, res) => {
 		if (pdFromValid || pdToValid){reqQuery+=`pd within "${pdFrom} ${pdTo}" AND `}
 	}
 	//if (req.query.applicant){reqQuery+=`pa=${req.query.applicant} AND `}
-	
+
 	reqQuery=reqQuery.slice(0,-5);
 	logger.verbose(`Parameters: ${reqQuery}`);
 	opsQuaestio.publishedDataSearch(reqQuery, (err,body, headers) => {
@@ -72,9 +72,22 @@ exports.userprofile = async(req, res) => {
 	db._userprofile(req.query.uid, (err, qresult) => {
 		if(err){
 			logger.error(`userprofile: ${msgServerError}: ${err}`);
-			res.status(500).json({message: `${this.userprofile.name}: ${msgServerError}`});
+			res.status(500).json({message: `userprofile: ${msgServerError}`});
 		}else{
 			res.status(200).json(qresult.userprofile);
+		}
+	})
+}
+
+exports.opendoc = async(req, res) => {
+	//update doc history and return OPS Link
+	db._updatehistory(req.query.uid, req.query.doc_num, (err, qresult) => {
+		if (err){
+			logger.error(`opendoc: ${msgServerError}: ${err}`);
+			res.status(500).json({message: `opendoc: ${msgServerError}`});
+		}else{
+			opslink = opsQuaestio.getLinkFromDocId(req.query.doc_num);
+			res.status(200).send({ops_link: opslink});
 		}
 	})
 }
