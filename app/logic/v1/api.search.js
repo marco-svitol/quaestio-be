@@ -23,7 +23,8 @@ exports.search = async(req, res) => {
 		else if (!pdFromValid && pdToValid){pdFrom = pdTo};
 		if (pdFromValid || pdToValid){reqQuery+=`pd within "${pdFrom} ${pdTo}" AND `}
 	}
-	//if (req.query.pa){reqQuery+=`pa=${req.query.applicant} AND `}
+	//if (req.query.applicant){reqQuery+=`pa=${req.query.applicant} AND `}
+	
 	reqQuery=reqQuery.slice(0,-5);
 	logger.verbose(`Parameters: ${reqQuery}`);
 	opsQuaestio.publishedDataSearch(reqQuery, (err,body, headers) => {
