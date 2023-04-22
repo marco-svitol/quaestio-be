@@ -41,12 +41,14 @@ exports.search = async(req, res) => {
 						doc.read_history = status[f];
 						return doc;
 					})
-					logger.debug(`openeddocs: ${histBody.length}`);
 					logger.debug(`Headers: ${headers}`);
 					body = histBody;
-					var userinfo = {"quotawarning": "green"};
+					var userinfo = parseOPSQuota(headers[0]);
 					body.push(userinfo);
 					res.status(200).send(body);
+				}else{
+					logger.error(`publishedDataSearch:gethistory ${err.message}. Stack: ${err.stack}`);
+					res.status(500).json({message: `search: ${msgServerError}`});
 				}
 
 			// const result = XMLValidator.validate(body);
@@ -107,4 +109,11 @@ exports.opendoc = async(req, res) => {
 			res.status(200).send({ops_link: opslink});
 		}
 	})
+}
+
+function parseOPSQuota(headers){
+	let throttling = headers["x-throttling-control"].replace(',','').replace('(','').replace(')','').split(' ');
+	throttling = throttling.map(x => {return x.split('=')});
+	let quotas = ({"throttling-control": throttling, "individualquotaperhour-used": headers["x-individualquotaperhour-used"], "registeredquotaperweek-used": headers["x-registeredquotaperweek-used"]});
+	return quotas;
 }
