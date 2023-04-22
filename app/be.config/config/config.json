@@ -5,6 +5,7 @@
             "opsBaseUrl"    : "",
             "opsClientID"   : "",
             "opsClientSecret" : "",
+            "opsDocURL"     : "https://worldwide.espacenet.com/publicationDetails/biblio",
             "certpath"      : "",
             "certpw"        : "",
             "cacheEnabled"  : 1,
