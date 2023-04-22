@@ -24,7 +24,7 @@ module.exports._login = async function(username, password, next){
 	dbRequest.input('username',sql.VarChar(255),username);
 	dbRequest.input('password',sql.VarChar(255),password);
   let strQuery = `SELECT uid, disabled FROM users WHERE username = @username AND password = CONVERT(NVARCHAR(256),HASHBYTES('MD5', @password),2);`
-  logger.verbose(strQuery); 
+  logger.verbose({SQLQuery: strQuery}); 
   dbRequest.query(strQuery)
     .then(dbRequest => {
       let rows = dbRequest.recordset;

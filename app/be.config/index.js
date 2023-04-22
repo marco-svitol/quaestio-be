@@ -24,6 +24,10 @@ finalConfig.tokenProperties.refresh_secret = process.env.REFRESH_TOKEN_SECRET;
 finalConfig.app.loglevel              = process.env.LOGLEVEL;
 finalConfig.app.serverPort              = process.env.SERVERPORT;
 
+finalConfig.app.logdnakey               = process.env.LOGDNAKEY;
+finalConfig.app.loghostname             = process.env.LOGHOSTNAME;
+finalConfig.app.logenv                  = process.env.LOGENV;
+
 if (!finalConfig.app.opsBaseUrl) {console.log ("Fatal error: OPSBASEURL missing");};
 if (!finalConfig.app.opsClientID) {console.log ("Fatal error: OPSCLIENTID missing");};
 if (!finalConfig.app.opsClientSecret) {console.log ("Fatal error: OPSCLIENTSECRET missing");};

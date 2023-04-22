@@ -1,3 +1,13 @@
+const logdnaWinston = require('logdna-winston');
+const logdnaOptions = {
+  key: global.config_data.app.logdnakey,
+  hostname: global.config_data.app.loghostname,
+  app: 'Quaestio-BackEnd',
+  env: global.config_data.app.logenv,
+  level: global.config_data.app.loglevel, // Default to debug, maximum level of log, doc: https://github.com/winstonjs/winston#logging-levels
+  indexMeta: true // Defaults to false, when true ensures meta object will be searchable
+}
+
 var winston = require('winston');
 const format = require('winston').format;
 const moment = require('moment-timezone');
@@ -46,6 +56,7 @@ if (global.environment === 'development'){
 
 var logger = winston.createLogger({
   levels: myCustomLevels.levels,
+  level: global.config_data.app.loglevel,
   format: winston.format.combine(
     appendTimestamp({ tz: 'Europe/Rome' }),
     winston.format.printf(log => {    
@@ -63,6 +74,7 @@ var logger = winston.createLogger({
   ]
 });
 
+logger.add(new logdnaWinston(logdnaOptions));
 
 
 module.exports=logger;
@@ -71,7 +83,10 @@ module.exports.srvconsoledir = function (request, start=1, err = 0){ //internal:
   let srvname = request.path;
   if (err==0){
 		if (start){
-			if (srvname == '/health' || srvname == '/metrics'){return;}  //do not print health service to prevent logs flood! 
+			if (srvname == '/health'  ||
+          srvname == '/metrics' || 
+          srvname == '/login'
+          ){return;}  //do not print health service to prevent logs flood! 
 			let msg;
       if (request.method === 'POST'){
         let params = JSON.stringify(request.body)

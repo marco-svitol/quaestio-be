@@ -1,7 +1,7 @@
 {
     "development" : {
         "app": {
-            "loglevel"      : "debug",
+            "loglevel"      : "verbose",
             "opsBaseUrl"    : "",
             "opsClientID"   : "",
             "opsClientSecret" : "",
@@ -10,7 +10,10 @@
             "certpw"        : "",
             "cacheEnabled"  : 1,
             "cacheTTLHours" : 8,
-            "serverPort"    : 80
+            "serverPort"    : 80,
+            "logdnakey"     : "",
+            "loghostname"   : "",
+            "logenv"        : ""
         },
         "sqlConfigPool" : {
             "connectionLimit"   : 10,
@@ -35,7 +38,7 @@
     },
     "production" : {
         "app": {
-            "loglevel" : "debug"
+            "loglevel" : "verbose"
         }
     }
 }
