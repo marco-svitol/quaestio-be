@@ -43,8 +43,8 @@ exports.search = async(req, res) => {
 					})
 					logger.debug(`Headers: ${headers}`);
 					body = histBody;
-					var userinfo = parseOPSQuota(headers[0]);
-					body.push(userinfo);
+					const userinfo = headers[0]?parseOPSQuota(headers[0]):parseOPSQuota(headers);
+					body.push({userinfo: userinfo});
 					res.status(200).send(body);
 				}else{
 					logger.error(`publishedDataSearch:gethistory ${err.message}. Stack: ${err.stack}`);
