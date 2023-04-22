@@ -15,11 +15,12 @@ exports.login = async(req, res) => {
 		return;
 	  }else{
 		if (qresult.success){
-		  //req.session.username = username;
+		//req.session.username = username;
 		  var token = createToken(qresult.uid, tokenProperties.secret, tokenProperties.tokenTimeout);
 			var refreshToken = createToken(qresult.uid, tokenProperties.refresh_secret, tokenProperties.refresh_tokenTimeout);  
 			logger.debug(`Login OK for user ${username} (${qresult.uid}). Token expires in ${Math.round(tokenProperties.tokenTimeout / 6)/10} minutes, refresh token in ${Math.round(tokenProperties.refresh_tokenTimeout / 6)/10}`);
-		  res.status(200).json({ uid: qresult.uid, token: token, refreshtoken: refreshToken});
+			logger.verbose({Response: {uid: qresult.uid, token: '****', refreshtoken: '****'}});
+			res.status(200).json({ uid: qresult.uid, token: token, refreshtoken: refreshToken});
 		}else{
 		  logger.warn(`Login failed for user ${username}: ${qresult.message}`);
 		  res.status(401).send();
@@ -36,7 +37,6 @@ exports.checkJWT = async function (req, res, next) { //Function used by Router t
 	if (req.headers['x-access-token'] || req.headers['authorization']) {// check headers params
 		let token = req.headers['x-access-token'] || req.headers['authorization']; 
 		token = token.replace(/^Bearer\s+/, "");
-		logger.verbose (token)
 		jwt.verify(token, tokenProperties.secret, function (err, decoded) {  // check valid token
 			if (err) {
 				logger.error(`checkJWT: ${err.name}: ${err.message}`);
@@ -68,7 +68,8 @@ exports.refresh = async function (req, res) {
 			var token = createToken(req.query.uid, tokenProperties.secret, tokenProperties.tokenTimeout);
 			d = new Date(decoded.exp*1000);
 			logger.debug(`Refresh token OK for user (${req.query.uid}). Token expires in ${Math.round(tokenProperties.tokenTimeout / 6)/10} minutes, refresh token on ${d.toUTCString()}`);
-		  res.status(200).json({token: token});
+		  logger.verbose({Response: {token: "****"}});
+			res.status(200).json({token: token});
 		} else {
 			logger.error(`Refresh token is valid but query userid does not match refresh token's userid`);
 			res.statusMessage = 'You are not authorized';

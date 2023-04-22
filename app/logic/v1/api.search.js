@@ -27,7 +27,7 @@ exports.search = async(req, res) => {
 	//if (req.query.applicant){reqQuery+=`pa=${req.query.applicant} AND `}
 
 	reqQuery=reqQuery.slice(0,-5);
-	logger.verbose(`Parameters: ${reqQuery}`);
+	logger.verbose({Parameters: reqQuery});
 	opsQuaestio.publishedDataSearch(reqQuery, (err,body, headers) => {
 		if (!err) {
 			db._gethistory(req.query.uid, (err, history) => { 
@@ -41,7 +41,7 @@ exports.search = async(req, res) => {
 						doc.read_history = status[f];
 						return doc;
 					})
-					logger.debug(`Headers: ${headers}`);
+					//logger.debug(`Headers: ${headers}`);
 					body = histBody;
 					const userinfo = headers[0]?parseOPSQuota(headers[0]):parseOPSQuota(headers);
 					body.push({userinfo: userinfo});
@@ -74,10 +74,9 @@ exports.publication = async(req, res) => {
 	//validate params middleware??
 	reqQuery="";
 	if (req.query.id){reqQuery+=`${req.query.id}`}
-	logger.verbose(`Parameters: ${reqQuery}`);
+	logger.verbose({Parameters: reqQuery});
 	opsQuaestio.publishedDataPubblicationDocDB(reqQuery, (err,body, headers) => {
 		if (!err) {
-			logger.debug(`Headers: ${headers}`);
 			res.status(200).send(body);
 		}else{
 			logger.error(`publication: ${err.message}. Stack: ${err.stack}`)
@@ -93,6 +92,7 @@ exports.userprofile = async(req, res) => {
 			logger.error(`userprofile: ${msgServerError}: ${err}`);
 			res.status(500).json({message: `userprofile: ${msgServerError}`});
 		}else{
+			logger.verbose({Response: qresult.userprofile});
 			res.status(200).json(qresult.userprofile);
 		}
 	})
@@ -106,6 +106,7 @@ exports.opendoc = async(req, res) => {
 			res.status(500).json({message: `opendoc: ${msgServerError}`});
 		}else{
 			opslink = opsQuaestio.getLinkFromDocId(req.query.doc_num);
+			logger.verbose({Response: {ops_link: opslink}});
 			res.status(200).send({ops_link: opslink});
 		}
 	})
