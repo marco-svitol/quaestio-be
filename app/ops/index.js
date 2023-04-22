@@ -122,24 +122,40 @@ module.exports = class opsService{
 
   async pubblicationDataFiltered(body, lang, next){
     let docData={};
-
+    const docid = body['bibliographic-data']['application-reference']['@doc-id']; 
     
     const titles      = body['bibliographic-data']['invention-title']; 
-    docData.title = this.filterArrayLang(titles, lang)[0]['$'];
+    if (titles) {
+      docData.title = this.filterArrayLang(titles, lang)[0]['$'];
+    }else{
+      docData.title = "";
+      logger.debug(`Title is missing for document docid: ${docid}`);
+    }
 
     const dates       = body['bibliographic-data']['publication-reference']['document-id'];
-    docData.date      = this.filterArrayLang(dates)[0]['date']['$'];
+    if (dates) {
+      docData.date      = this.filterArrayLang(dates)[0]['date']['$'];
+    }else{
+      docData.date = "";
+      logger.debug(`Date is missing for document docid: ${docid}`);
+    }
 
     const abstracts   = body['abstract'];
     if (abstracts) {
       docData.abstract  = this.filterArrayLang(abstracts,lang)[0]['p']['$'];
     }else{
       docData.abstract  = "";
-      logger.debug(`Abstract is missing for document docid: ${docData.title}`);
+      logger.debug(`Abstract is missing for document docid: ${docid}`);
     }
 
     const applicants  = body['bibliographic-data']['parties']['applicants']['applicant'];
-    docData.applicant = this.filterArrayLang(applicants)[0]['applicant-name']['name']['$'];
+    if (applicants) {
+      docData.applicant = this.filterArrayLang(applicants)[0]['applicant-name']['name']['$'];
+    }else{
+      docData.applicant  = "";
+      logger.debug(`Applicant is missing for document docid: ${docid}`);
+    }
+    
 
     const inventors   =  body['bibliographic-data']['parties']['inventors'];
     if (inventors) {
@@ -151,7 +167,7 @@ module.exports = class opsService{
       }
     }else{
       docData.inventor = "";
-      logger.debug(`Inventor is missing for document docid: ${docData.title}`);
+      logger.debug(`Inventor is missing for document docid: ${docid}`);
     }
     return next(null, docData);
   }
