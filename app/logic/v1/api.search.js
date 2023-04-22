@@ -5,7 +5,7 @@ const db=require('../../database');
 // const XMLValidator = require('fast-xml-parser').XMLValidator;
 // const XMLParser = require('fast-xml-parser').XMLParser;
 // const parser = new XMLParser();
-const read_history = ["new", "listed", "viewed"];
+const status = ["new", "listed", "viewed"];
 
 exports.search = async(req, res) => {
 	//validate params middleware??
@@ -30,18 +30,27 @@ exports.search = async(req, res) => {
 	logger.verbose(`Parameters: ${reqQuery}`);
 	opsQuaestio.publishedDataSearch(reqQuery, (err,body, headers) => {
 		if (!err) {
-			const arr = ["new", "listed", "viewed"];
-            const randomIndex = Math.floor(Math.random() * arr.length);
-			body.forEach (doc => {
-				const randomIndex = Math.floor(Math.random() * arr.length);
-				const status = arr[randomIndex];
-				//const status = gethistory(req.query.uid, doc.doc_num);
-				doc.read_history = status;
-			});
-			logger.debug(`Headers: ${headers}`);
-			var userinfo = {"quotawarning": "green"};
-			body.push(userinfo);
-			res.status(200).send(body);
+			db._gethistory(req.query.uid, (err, history) => { 
+				if (!err){
+					const histBody = body.map(doc => {
+						let f=0;
+						if (history){
+							f = history.find(hdoc =>  hdoc.docid === doc.doc_num);
+							f = f?f.status:0;
+						} 
+						doc.read_history = status[f];
+						return doc;
+					})
+					logger.debug(`Headers: ${headers}`);
+					body = histBody;
+					var userinfo = parseOPSQuota(headers[0]);
+					body.push(userinfo);
+					res.status(200).send(body);
+				}else{
+					logger.error(`publishedDataSearch:gethistory ${err.message}. Stack: ${err.stack}`);
+					res.status(500).json({message: `search: ${msgServerError}`});
+				}
+
 			// const result = XMLValidator.validate(body);
 			// if (result === true){
 			// 	logger.verbose("XML validation passed.")
@@ -51,6 +60,7 @@ exports.search = async(req, res) => {
 			// 	logger.debug(`XML invalid. ${body}`)
 			// 	res.status(500).send("XML invalid.")
 			// }
+			})
 		}else{
 			logger.error(`publishedDataSearch: ${err.message}. Stack: ${err.stack}`);
 			res.status(500).json({message: `search: ${msgServerError}`});
@@ -90,7 +100,7 @@ exports.userprofile = async(req, res) => {
 
 exports.opendoc = async(req, res) => {
 	//update doc history and return OPS Link
-	await db._updatehistory(req.query.uid, req.query.doc_num, read_history.indexOf("viewed"), (err, qresult) => {
+	db._updatehistory(req.query.uid, req.query.doc_num, status.indexOf("viewed"), (err, qresult) => {
 		if (err){
 			logger.error(`opendoc: ${msgServerError}: ${err}`);
 			res.status(500).json({message: `opendoc: ${msgServerError}`});
@@ -101,17 +111,9 @@ exports.opendoc = async(req, res) => {
 	})
 }
 
-async function gethistory (uid, docid) {
-	await db._gethistory(uid, docid, (err, status) => {
-		if (err){
-			logger.error(`gethistory: ${msgServerError}: ${err}`);
-			return 0;
-		}else{
-			if (status){
-				return read_history[status]
-			}else{
-				return read_history[0]
-			}
-		}
-	})
+function parseOPSQuota(headers){
+	let throttling = headers["x-throttling-control"].replace(',','').replace('(','').replace(')','').split(' ');
+	throttling = throttling.map(x => {return x.split('=')});
+	let quotas = ({"throttling-control": throttling, "individualquotaperhour-used": headers["x-individualquotaperhour-used"], "registeredquotaperweek-used": headers["x-registeredquotaperweek-used"]});
+	return quotas;
 }

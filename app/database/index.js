@@ -88,16 +88,15 @@ END`
     })
 }
 
-module.exports._gethistory = async function(uid, docid, next){
+module.exports._gethistory = async function(uid, next){
   var dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.Int, uid);
-  dbRequest.input('docid', sql.NVarChar, docid);
-  var strQuery = `SELECT status FROM dochistory WHERE uid = @uid AND docid = @docid`
+  var strQuery = `SELECT docid, status FROM dochistory WHERE uid = @uid`
   dbRequest.query(strQuery)
     .then(dbRequest => {
       let rows = dbRequest.recordset;
       if (rows.length > 0){
-          next(null, rows[0]);
+          next(null, rows);
       }else{
         next(null,null);
       }
