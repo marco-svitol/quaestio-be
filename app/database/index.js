@@ -63,20 +63,21 @@ module.exports._userprofile = async function(uid, next){
     })
 }
 
-module.exports._updatehistory = async function(uid, next){
+module.exports._updatehistory = async function(uid, docid, status, next){
   var dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.Int, uid);
   dbRequest.input('docid', sql.NVarChar, docid);
+  dbRequest.input('status', sql.Int, status);
   var strQuery = `
-IF EXISTS (SELECT 1 FROM doc_history WHERE uid = @uid AND docid = @docid)  
+IF EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)  
 BEGIN  
-	UPDATE doc_history   
+	UPDATE dochistory   
 	SET status = 2  
 	WHERE uid = @uid AND docid = @docid;  
 END  
 ELSE  
 BEGIN  
-	  INSERT INTO doc_history (uid, docid) VALUES (@uid, @docid)
+	  INSERT INTO dochistory (uid, docid, status) VALUES (@uid, @docid, @status)
 END`
   dbRequest.query(strQuery)
     .then(() => {
@@ -84,6 +85,25 @@ END`
     })
     .catch(err => {
       next(err);
+    })
+}
+
+module.exports._gethistory = async function(uid, docid, next){
+  var dbRequest = await this.poolrequest();
+  dbRequest.input('uid', sql.Int, uid);
+  dbRequest.input('docid', sql.NVarChar, docid);
+  var strQuery = `SELECT status FROM dochistory WHERE uid = @uid AND docid = @docid`
+  dbRequest.query(strQuery)
+    .then(dbRequest => {
+      let rows = dbRequest.recordset;
+      if (rows.length > 0){
+          next(null, rows[0]);
+      }else{
+        next(null,null);
+      }
+    })
+    .catch(err => {
+      next(err,null);
     })
 }
 

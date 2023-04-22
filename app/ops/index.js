@@ -1,7 +1,7 @@
 const axios=require('axios');
 const { id } = require('cls-rtracer');
 const logger=require('../logger'); 
-const opsDOCURL = global.config_data.app.opsDOCURL;
+const opsDOCURL = global.config_data.app.opsDocURL;
 
 //Authentication Axios instance
 let authParams = new URLSearchParams({grant_type : 'client_credentials'});
@@ -88,20 +88,12 @@ module.exports = class opsService{
           for (let opsPublication of opsPublications){
             opsPublication=opsPublication['exchange-document'];
             let docid=opsPublication['@country']+'.'+opsPublication['@doc-number']+'.'+opsPublication['@kind'];
-            let docUrl= getLinkFromDocId(docid);
+            let docUrl= this.getLinkFromDocId(docid);
             //let doctype=opsPublication['@document-id-type'];
             //if (doctype==="docdb"){
               await this.pubblicationDataFiltered(opsPublication, "en", async(err, docData) => {
               if (docData){  
-                  //DEBUG
-                  // create an array of three values
-                  const arr = ["new", "listed", "viewed"];
-                  // generate a random index between 0 and 2
-                  const randomIndex = Math.floor(Math.random() * arr.length);
-                  // retrieve the value at the randomly generated index
-                  const randomValue = arr[randomIndex];
-                  //-------
-                  docs.push({"doc_num":docid,"type":"docdb","invention_title":docData.title,"date":docData.date,"abstract":docData.abstract,"applicant":docData.applicant,"inventor_name":docData.inventor,"ops_link":docUrl,"read_history":randomValue});
+                  docs.push({"doc_num":docid,"type":"docdb","invention_title":docData.title,"date":docData.date,"abstract":docData.abstract,"applicant":docData.applicant,"inventor_name":docData.inventor,"ops_link":docUrl});
                 }else{
                   throw (err);
                 }
@@ -125,7 +117,7 @@ module.exports = class opsService{
 
   getLinkFromDocId(docid){
     let docidSplit = docid.split(".");
-    return docUrl=`${opsDOCURL}?FT=D&CC=${docidSplit[0]}&NR=${docidSplit[1]}${docidSplit[2]}&KC=${docidSplit[2]}`;
+    return `${opsDOCURL}?FT=D&CC=${docidSplit[0]}&NR=${docidSplit[1]}${docidSplit[2]}&KC=${docidSplit[2]}`;
   }
 
   async pubblicationDataFiltered(body, lang, next){

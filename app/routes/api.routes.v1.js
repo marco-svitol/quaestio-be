@@ -14,7 +14,7 @@ module.exports = myapp => {
 
   cacheMiddleware.unless = unless; 
   routerapp.use(cacheMiddleware.unless({
-    path: ['/api/v1/test','/api/v1/cachereset','/api/v1/auth/login','/api/v1/auth/refresh','/api/v1/opstest']
+    path: ['/api/v1/test','/api/v1/cachereset','/api/v1/auth/login','/api/v1/auth/refresh','/api/v1/opstest','/api/v1/search']
   }))
 
   routerapp.post("/cachereset",       apitest.cacheReset);
@@ -23,8 +23,9 @@ module.exports = myapp => {
   routerapp.get("/fsearch",           apitest.search );
   routerapp.get("/search",            apisearch.search );
   routerapp.get("/publication",       apisearch.publication );
-  routerapp.get("/userprofile",      apisearch.userprofile);
-  routerapp.get("/auth/login",             apiauth.login);
+  routerapp.get("/userprofile",       apisearch.userprofile);
+  routerapp.get("/opendoc",           apisearch.opendoc);
+  routerapp.get("/auth/login",        apiauth.login);
   routerapp.get("/auth/refresh",      apiauth.refresh);
   myapp.use('/api/v1', routerapp);
   // routerappbeta.get("/search",        apisearch.search );
