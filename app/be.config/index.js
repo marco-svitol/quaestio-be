@@ -27,6 +27,7 @@ finalConfig.app.serverPort              = process.env.SERVERPORT;
 finalConfig.app.logdnakey               = process.env.LOGDNAKEY;
 finalConfig.app.loghostname             = process.env.LOGHOSTNAME;
 finalConfig.app.logenv                  = process.env.LOGENV;
+finalConfig.app.loglevel                = process.env.LOGLEVEL;
 
 if (!finalConfig.app.opsBaseUrl) {console.log ("Fatal error: OPSBASEURL missing");};
 if (!finalConfig.app.opsClientID) {console.log ("Fatal error: OPSCLIENTID missing");};
