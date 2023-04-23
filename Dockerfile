@@ -14,6 +14,10 @@ ARG sqlconfig_dbserver
 ARG sqlconfig_dbname
 ARG token_secret
 ARG refresh_token_secret
+ARG logdnakey
+ARG logenv
+ARG loghostname
+ARG loglevel
 
 ENV OPSBASEURL=${opsbaseurl}
 ENV OPSCLIENTID=${opsclientid}
@@ -24,6 +28,10 @@ ENV SQLCONFIG_DBSERVER=${sqlconfig_dbserver}
 ENV SQLCONFIG_DBNAME=${sqlconfig_dbname}
 ENV TOKEN_SECRET=${token_secret}
 ENV REFRESH_TOKEN_SECRET=${refresh_token_secret}
+ENV LOGDNAKEY=${logdnakey}
+ENV LOGENV=${logenv}
+ENV LOGHOSTNAME=${loghostname}
+ENV LOGLEVEL=${loglevel}
 
 
 WORKDIR /nodejs
