@@ -77,10 +77,10 @@ jobs:
               "sqlconfig_dbname=${{ secrets.SQLCONFIG_DBNAME }}"
               "token_secret=${{ secrets.TOKEN_SECRET }}"
               "refresh_token_secret=${{ secrets.REFRESH_TOKEN_SECRET }}"
-          # secrets: |
-          #   "opsbaseurl=${{ secrets.OPSBASEURL }}"
-          #   "opsclientid=${{ secrets.OPSCLIENTID }}"
-          #   "opsclientsecret=${{ secrets.OPSCLIENTSECRET }}"
+              "logdnakey=${{ secrets.LOGDNAKEY }}
+              "logenv=${{ secrets.LOGENV }}
+              "loghostname=${{ secrets.LOGHOSTNAME }}
+              "loglevel=${{ secrets.LOGLEVEL }}
 
   deploy:
     permissions:
