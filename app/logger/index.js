@@ -74,7 +74,7 @@ var logger = winston.createLogger({
   ]
 });
 
-logger.add(new logdnaWinston(logdnaOptions));
+//logger.add(new logdnaWinston(logdnaOptions));
 
 
 module.exports=logger;
