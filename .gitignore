@@ -1,5 +1,5 @@
 .vscode/
-
+github.secrets
 
 #certs
 *.pfx
