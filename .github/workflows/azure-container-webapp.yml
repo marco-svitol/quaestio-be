@@ -45,6 +45,80 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Set Web App settings
+        uses: Azure/appservice-settings@v1
+        with:
+          app-name: 'quaestio-be'
+          app-settings-json: |
+            [ 
+              {  
+                "name" : "OPSBASEURL",
+                "value": "${{ secrets.OPSBASEURL }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "OPSCLIENTID",
+                "value": "${{ secrets.OPSCLIENTID }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "OPSCLIENTSECRET",
+                "value": "${{ secrets.OPSCLIENTSECRET }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "SQLCONFIG_DBUSER",
+                "value": "${{ secrets.SQLCONFIG_DBUSER }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "SQLCONFIG_DBPW",
+                "value": "${{ secrets.SQLCONFIG_DBPW }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "SQLCONFIG_DBSERVER",
+                "value": "${{ secrets.SQLCONFIG_DBSERVER }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "SQLCONFIG_DBNAME",
+                "value": "${{ secrets.SQLCONFIG_DBNAME }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "TOKEN_SECRET",
+                "value": "${{ secrets.TOKEN_SECRET }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "REFRESH_TOKEN_SECRET",
+                "value": "${{ secrets.REFRESH_TOKEN_SECRET }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "LOGDNAKEY",
+                "value": "${{ secrets.LOGDNAKEY }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "LOGENV",
+                "value": "${{ secrets.LOGENV }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "LOGHOSTNAME",
+                "value": "${{ secrets.LOGHOSTNAME }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "LOGLEVEL",
+                "value": "${{ LOGLEVEL }}",
+                "slotSetting": false
+              },
+            ]        
+
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
@@ -67,20 +141,6 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:${{ github.sha }}
           file: ./Dockerfile
-          build-args: |
-              "opsbaseurl=${{ secrets.OPSBASEURL }}"
-              "opsclientid=${{ secrets.OPSCLIENTID }}"
-              "opsclientsecret=${{ secrets.OPSCLIENTSECRET }}"
-              "sqlconfig_dbuser=${{ secrets.SQLCONFIG_DBUSER }}"
-              "sqlconfig_dbpw=${{ secrets.SQLCONFIG_DBPW }}"
-              "sqlconfig_dbserver=${{ secrets.SQLCONFIG_DBSERVER }}"
-              "sqlconfig_dbname=${{ secrets.SQLCONFIG_DBNAME }}"
-              "token_secret=${{ secrets.TOKEN_SECRET }}"
-              "refresh_token_secret=${{ secrets.REFRESH_TOKEN_SECRET }}"
-              "logdnakey=${{ secrets.LOGDNAKEY }}"
-              "logenv=${{ secrets.LOGENV }}"
-              "loghostname=${{ secrets.LOGHOSTNAME }}"
-              "loglevel=${{ secrets.LOGLEVEL }}"
 
   deploy:
     permissions:
