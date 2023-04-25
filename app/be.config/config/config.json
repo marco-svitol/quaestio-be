@@ -31,7 +31,7 @@
         },
         "tokenProperties": {
             "secret" : "",
-            "tokenTimeout": 600,
+            "tokenTimeout": 172800,
             "refresh_secret" : "",
             "refresh_tokenTimeout" : 172800
         }
