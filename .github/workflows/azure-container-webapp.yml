@@ -113,7 +113,17 @@ jobs:
               },
               {
                 "name" : "LOGLEVEL",
-                "value": "${{ LOGLEVEL }}",
+                "value": "${{ vars.LOGLEVEL }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "SERVERPORT",
+                "value": "${{ vars.SERVERPORT }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "NODE_ENV",
+                "value": "${{ vars.NODE_ENV }}",
                 "slotSetting": false
               }
             ]        
