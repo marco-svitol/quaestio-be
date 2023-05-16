@@ -43,7 +43,7 @@ module.exports = class opsService{
         config.baseURL = `${global.config_data.app.opsBaseUrl}`,
         config.headers = {
             Authorization : `Bearer ${authResponse.access_token}`,
-            Accept : 'application/json, application/pdf, application/jpeg, application/gif'
+            Accept : 'application/json, application/pdf, application/jpeg, application/gif, image/png'
         }
         return config;
       },
@@ -115,9 +115,14 @@ module.exports = class opsService{
     })
   }
 
+  splitDocId(docid){
+    const docidSplit = docid.split(".");
+    return {doccountry: docidSplit[0], docnum:docidSplit[1], dockind: docidSplit[2] };
+  }
+
   getLinkFromDocId(docid){
-    let docidSplit = docid.split(".");
-    return `${opsDOCURL}?FT=D&CC=${docidSplit[0]}&NR=${docidSplit[1]}${docidSplit[2]}&KC=${docidSplit[2]}`;
+    const docCodes = this.splitDocId(docid);
+    return `${opsDOCURL}?FT=D&CC=${docCodes.doccountry}&NR=${docCodes.docnum}${docCodes.dockind}&KC=${docCodes.dockind}`;
   }
 
   async pubblicationDataFiltered(body, lang, next){
@@ -184,15 +189,70 @@ module.exports = class opsService{
     }
   }
 
-  async publishedDataPubblicationDocDB(strQuery, next){
+  async publishedDataPublicationDocDBImages(docid, next){
+    await this.commonAxiosInstance.get(`/rest-services/published-data/publication/docdb/${docid}/images`)
+    .then (async (response) => {
+      return next(null, response.data, response.headers);
+    })
+    .catch((err) => {
+      return next(err, null, null);  
+    })
+  }
+
+  parseImagesListBody(data){
+    let imagesLinks=[];
+    for (let imageData of data){
+      imagesLinks.push({"desc": imageData['@desc'], "nofpages": imageData['@number-of-pages'], "format" : `${this.pickDocFormat(imageData['ops:document-format-options']['ops:document-format'])}`, "link": imageData['@link']});
+    }
+    return (imagesLinks);
+  }
+
+  pickDocFormat(docFormats){
+    const formatsPriority = [
+      'png',
+      'pdf',
+      'jpg',
+      'tiff'
+    ]
+    for (let format of formatsPriority){
+      if (docFormats.find(({$}) => $.includes(format))){
+        return format
+      }
+    }
+    return docFormats[0][$];
+  }
+
+  getImagesLinksFromDocId(docid, next){
+    //call ops to list of images
+    this.publishedDataPublicationDocDBImages(docid, (err, data, headers) => {
+      if (!err) {
+        try {
+          const imagesLinks = this.parseImagesListBody(data['ops:world-patent-data']['ops:document-inquiry']['ops:inquiry-result']['ops:document-instance']);
+          return next ({imagesLinks: imagesLinks, headers: headers});
+        }
+        catch(err){
+          logger.error(`getImagesLinksFromDocId: ${err.message}. Stack: ${err.stack}`);
+          return next(null);
+        }
+      }else{
+        logger.error(`getImagesLinksFromDocId: ${err.message}. Stack: ${err.stack}`);
+        return next(null);
+      }
+    })
+  }
+
+  async getImage(imgPath, imgFormat, imgPage, next){
     try{
-      const response = await this.commonAxiosInstance.get(`/rest-services/published-data/publication/docdb/${strQuery}/`)
+      const getURL = `/rest-services/${imgPath}.${imgFormat}?Range=${imgPage}`;
+      logger.verbose(`image: ${getURL}`);
+      const response = await this.commonAxiosInstance.get(`${getURL}`, {responseType: 'stream'});
       return next(null, response.data, response.headers);
     }
     catch(err){
       return next(err, null, null);  
     }
   }
+
 }
 
 

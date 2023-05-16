@@ -4,6 +4,7 @@ let memCache = new cache.Cache();  //Cache managment
 const cacheEnabled = global.config_data.app.cacheEnabled  //en/dis global caching
 const cacheTTLHours = global.config_data.app.cacheTTLHours //Cache persistance
 const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+const stream = require('stream');
 
 module.exports.cacheMiddleware = function(req, res, next){ //Function used by Router to manage cache
 	let key =  '__express__' + (req.originalUrl || req.url) + JSON.stringify(req.body)
@@ -23,6 +24,30 @@ module.exports.cacheMiddleware = function(req, res, next){ //Function used by Ro
 			}
 			res.sendResponse(body);
 		}
+		return next();
+
+		//Stream cache -> split in two middlewares ?
+		const writeStream = new stream.PassThrough();
+		const cacheWriteStream = new stream.PassThrough();
+	
+		const originalPipe = writeStream.pipe.bind(writeStream);
+		writeStream.pipe = (destination, options) => {
+		  cacheWriteStream.pipe(destination, options);
+		  return originalPipe(destination, options);
+		};
+	
+		cacheWriteStream.on('data', (chunk) => {
+			memCache.set(key, chunk, cacheTTLHours*(3600*1000));
+		});
+	
+		res.on('pipe', (source) => {
+		  source.pipe(writeStream);
+		});
+	
+		writeStream.on('end', () => {
+		  res.end();
+		});
+	
 		next();
 	}
 }

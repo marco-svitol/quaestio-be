@@ -6,6 +6,7 @@ const db=require('../../database');
 // const XMLParser = require('fast-xml-parser').XMLParser;
 // const parser = new XMLParser();
 const status = ["new", "listed", "viewed"];
+const fs = require('fs');
 
 exports.search = async(req, res) => {
 	//validate params middleware??
@@ -27,7 +28,7 @@ exports.search = async(req, res) => {
 	//if (req.query.applicant){reqQuery+=`pa=${req.query.applicant} AND `}
 
 	reqQuery=reqQuery.slice(0,-5);
-	logger.verbose({Parameters: reqQuery});
+	logger.verbose(reqQuery);
 	opsQuaestio.publishedDataSearch(reqQuery, (err,body, headers) => {
 		if (!err) {
 			db._gethistory(req.query.uid, (err, history) => { 
@@ -70,21 +71,6 @@ exports.search = async(req, res) => {
 	 
 }
 
-exports.publication = async(req, res) => {
-	//validate params middleware??
-	reqQuery="";
-	if (req.query.id){reqQuery+=`${req.query.id}`}
-	logger.verbose({Parameters: reqQuery});
-	opsQuaestio.publishedDataPubblicationDocDB(reqQuery, (err,body, headers) => {
-		if (!err) {
-			res.status(200).send(body);
-		}else{
-			logger.error(`publication: ${err.message}. Stack: ${err.stack}`)
-			res.status(500).send(msgServerError+" : "+err.message)
-		}	
-	})
-}
-
 exports.userprofile = async(req, res) => {
 	//validate params middleware??
 	db._userprofile(req.query.uid, (err, qresult) => {
@@ -105,12 +91,31 @@ exports.opendoc = async(req, res) => {
 			logger.error(`opendoc: ${msgServerError}: ${err}`);
 			res.status(500).json({message: `opendoc: ${msgServerError}`});
 		}else{
-			opslink = opsQuaestio.getLinkFromDocId(req.query.doc_num);
-			logger.verbose({Response: {ops_link: opslink}});
-			res.status(200).send({ops_link: opslink});
+			//retrieve link to firstpageClipping
+			const opslink = opsQuaestio.getLinkFromDocId(req.query.doc_num);
+			opsQuaestio.getImagesLinksFromDocId((req.query.doc_num), (imagesLinks) => {
+				const userinfo = imagesLinks.headers[0]?parseOPSQuota(imagesLinks.headers[0]):parseOPSQuota(imagesLinks.headers);
+				res.status(200).send({ops_link: opslink, images_links: imagesLinks.imagesLinks, userinfo: userinfo});
+			})
 		}
 	})
 }
+
+exports.firstpageClipping = async(req, res) => {
+	const fpcImage = req.query.fpcImage;
+	const fpcImageFormat = req.query.fpcImageFormat;
+	opsQuaestio.getImage(fpcImage, fpcImageFormat, 1, (err,body, headers) => {
+		if (!err) {
+			res.writeHead(200, {
+				'Content-Type': headers['content-type']
+			  });
+			body.pipe(res);
+		}else{
+			logger.error(`firstpageClipping: ${err.message}. Stack: ${err.stack}`)
+			res.status(500).send(msgServerError+" : "+err.message)
+		}
+	})
+} 
 
 function parseOPSQuota(headers){
 	let throttling = headers["x-throttling-control"].replace(',','').replace('(','').replace(')','').split(' ');
