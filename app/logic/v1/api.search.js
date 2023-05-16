@@ -6,7 +6,6 @@ const db=require('../../database');
 // const XMLParser = require('fast-xml-parser').XMLParser;
 // const parser = new XMLParser();
 const status = ["new", "listed", "viewed"];
-const fs = require('fs');
 
 exports.search = async(req, res) => {
 	//validate params middleware??
