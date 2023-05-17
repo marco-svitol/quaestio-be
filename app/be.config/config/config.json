@@ -5,7 +5,7 @@
             "opsBaseUrl"    : "",
             "opsClientID"   : "",
             "opsClientSecret" : "",
-            "opsDocURL"     : "https://worldwide.espacenet.com/publicationDetails/biblio",
+            "opsDocURL"     : "https://worldwide.espacenet.com/patent/search/family",
             "certpath"      : "",
             "certpw"        : "",
             "cacheEnabled"  : 1,

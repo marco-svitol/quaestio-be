@@ -138,6 +138,7 @@ responses content example:
     {
       "doc_num": "BR.112020019905.A2",
       "type": "docdb",
+      "familyid": "8256708",
       "invention_title" : "Time machine",
       "date": "20210105",
       "abstract": "A machine to travel in the past and in the future",
@@ -210,7 +211,7 @@ responses content example:
 ```
 [
   {
-    "ops_link" : "https://ops.abcd.com/doc/1234asd",
+    "ops_link" : "https://worldwide.espacenet.com/patent/search/family/85988853/publication/WO2023064419A1?q=pn%3DWO2023064419A1",
     "images_links" : [
         {
             "desc": "FullDocument",

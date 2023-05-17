@@ -93,8 +93,13 @@ exports.opendoc = async(req, res) => {
 			//retrieve link to firstpageClipping
 			const opslink = opsQuaestio.getLinkFromDocId(req.query.doc_num);
 			opsQuaestio.getImagesLinksFromDocId((req.query.doc_num), (imagesLinks) => {
-				const userinfo = imagesLinks.headers[0]?parseOPSQuota(imagesLinks.headers[0]):parseOPSQuota(imagesLinks.headers);
-				res.status(200).send({ops_link: opslink, images_links: imagesLinks.imagesLinks, userinfo: userinfo});
+				if (imagesLinks){
+					const userinfo = imagesLinks.headers[0]?parseOPSQuota(imagesLinks.headers[0]):parseOPSQuota(imagesLinks.headers);
+					res.status(200).send({ops_link: opslink, images_links: imagesLinks.imagesLinks, userinfo: userinfo});
+				}else{
+					res.status(200).send({ops_link: opslink, images_links: "", userinfo: ""});
+				}
+				
 			})
 		}
 	})
