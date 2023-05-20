@@ -191,7 +191,7 @@ module.exports = class opsService{
   }
 
   async publishedDataPublicationDocDBImages(docid, next){
-    await this.commonAxiosInstance.get(`/rest-services/published-data/publication/docdb/${docid}/images`)
+    await this.commonAxiosInstance.get(`/rest-services/published-data/publication/epodoc/${docid}/images`)
     .then (async (response) => {
       return next(null, response.data, response.headers);
     })
