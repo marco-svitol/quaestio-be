@@ -86,7 +86,8 @@ responses content example:
 [
   {
     "userinfo" : {
-      "displayname" : "Marty McFly"
+      "displayname" : "Marty McFly",
+      "logopath": "https://quaestiosa.blob.core.windows.net/quaestio/logo_default.jpg"
     },
     "searchvalues": {
 	  "applicants" : 
