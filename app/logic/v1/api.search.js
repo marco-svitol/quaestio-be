@@ -43,7 +43,7 @@ exports.search = async(req, res) => {
 					})
 					//logger.debug(`Headers: ${headers}`);
 					body = histBody;
-					const userinfo = headers[0]?parseOPSQuota(headers[0]):parseOPSQuota(headers);
+					const userinfo = headers[0]?this.parseOPSQuota(headers[0]):this.parseOPSQuota(headers);
 					body.push({userinfo: userinfo});
 					res.status(200).send(body);
 				}else{
@@ -94,7 +94,7 @@ exports.opendoc = async(req, res) => {
 			const opslink = opsQuaestio.getLinkFromDocId(req.query.doc_num);
 			opsQuaestio.getImagesLinksFromDocId((req.query.doc_num), (imagesLinks) => {
 				if (imagesLinks){
-					const userinfo = imagesLinks.headers[0]?parseOPSQuota(imagesLinks.headers[0]):parseOPSQuota(imagesLinks.headers);
+					const userinfo = imagesLinks.headers[0]?this.parseOPSQuota(imagesLinks.headers[0]):this.parseOPSQuota(imagesLinks.headers);
 					res.status(200).send({ops_link: opslink, images_links: imagesLinks.imagesLinks, userinfo: userinfo});
 				}else{
 					res.status(200).send({ops_link: opslink, images_links: "", userinfo: ""});
@@ -121,7 +121,7 @@ exports.firstpageClipping = async(req, res) => {
 	})
 } 
 
-function parseOPSQuota(headers){
+exports.parseOPSQuota = function(headers){
 	let throttling = headers["x-throttling-control"].replace(',','').replace('(','').replace(')','').split(' ');
 	throttling = throttling.map(x => {return x.split('=')});
 	let quotas = ({"throttling-control": throttling, "individualquotaperhour-used": headers["x-individualquotaperhour-used"], "registeredquotaperweek-used": headers["x-registeredquotaperweek-used"]});

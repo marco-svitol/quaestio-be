@@ -1,5 +1,7 @@
  # `GET` **/auth/login** : user authentication
 
+version: 1
+
 parameters:
 
 |Name|Description|
@@ -27,6 +29,7 @@ responses content example:
 ]
 ```
  # `GET` **/auth/refreshtoken** : refresh api token key using the refresh token
+version: 1
 
 parameters:
 
@@ -61,6 +64,7 @@ responses content example:
 ##  _All the following methods require an authorization key_ :
  ----------------
  # `GET` **/userprofile** : returns user's relevant data to prepare the search page
+version: 1
 
 parameters:
 
@@ -108,7 +112,46 @@ responses content example:
 ]
 
 ```
+ ----------------
+ # `GET` **/userprofile** : returns user's relevant data to prepare the search page
+ version: 2
+
+ parameters: as v1
+
+ responses example:
+ ```
+[
+    {
+        "searchvalues": {
+            "applicants": [
+                {
+                    "id": "1",
+                    "name": "JOHNNY"
+                },
+                {
+                    "id": "2",
+                    "name": "GEPPO"
+                },
+               ...
+            ],
+            "tecareas": [
+                {
+                    "id": "1",
+                    "name": "Flying Cars"
+                },
+                {
+                    "id": "2",
+                    "name": "Motus perpetuus"
+                },
+                ...
+            ]
+        },
+        "userinfo.displayname": "acme"
+    }
+]
+```
  # `GET` **/search** : search patent documents
+version: 1
 
 parameters:
 
@@ -190,9 +233,30 @@ responses content example:
 |new|It's the first time this doc is shown in the results|
 |listed|This doc was already listed previously but not viewed|
 |viewed|This doc has already been opened|
+----------------
 
- ----------------
+ # `GET` **/search** : search patent documents
+version: 2
+
+parameters:
+
+|Name|Description|
+|----|-----------|
+|uid*|user id|
+|pa*|patent's applicant id|
+|tecarea*|patent tech area id|
+|txt|search text pattern|
+|pdfrom|starting date. Date format must match YYYYMMDD|
+|pdto|ending date. Format as above|
+
+\* One of pa or tecarea must be present. Other parameters are optional.
+
+The response is the same as API v1.
+
+ 
+----------------
  # `GET` **/opendoc** : returns URL to OPS original doc and list of available images (drawings)
+version: 1
 
 parameters:
 
@@ -268,6 +332,7 @@ responses content example:
 ```
  ----------------
  # `GET` **/firstpageClipping** : returns the modal image
+version: 1
 
 parameters:
 
