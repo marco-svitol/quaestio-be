@@ -48,7 +48,14 @@ module.exports._login = async function(username, password, next){
 module.exports._userprofile = async function(uid, next){
   var dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.Int, uid);
-  var strQuery = `SELECT displayname AS "userinfo.displayname", JSON_QUERY(searchvalues,'$') AS searchvalues FROM [view.usersprofile] WHERE uid = @uid FOR JSON PATH`;
+  var strQuery = `
+  SELECT 
+  displayname AS "userinfo.displayname", 
+  logopath AS "userinfo.logopath",
+  JSON_QUERY(searchvalues,'$') AS searchvalues 
+  FROM [view.usersprofile] 
+  WHERE uid = @uid FOR JSON PATH
+  `;
   dbRequest.query(strQuery)
     .then(dbRequest => {
       let rows = dbRequest.recordset;
@@ -69,6 +76,7 @@ module.exports._userprofile_v2 = async function(uid, next){
   var strQuery = `
   SELECT
   displayname AS "userinfo.displayname",
+  logopath AS "userinfo.logopath",
   JSON_QUERY(
       (
           SELECT
