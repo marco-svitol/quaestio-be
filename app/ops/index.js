@@ -76,8 +76,10 @@ module.exports = class opsService{
       //Range! 
       let docs=[];
       let opsLights=[];
+      let opsResultsInfo = null;
       if (response){
         opsLights.push(response.headers);
+        opsResultsInfo = this.parseOPSResultsInfo(response.data);
         if (response.data){
           let opsPublications = response.data['ops:world-patent-data']['ops:biblio-search']['ops:search-result']['exchange-documents'];
           if (!opsPublications.length){
@@ -103,7 +105,7 @@ module.exports = class opsService{
           };
         }
       }
-      return next(null, docs, opsLights);
+      return next(null, docs, opsLights, opsResultsInfo);
       //Semaphors + quota
     })
     .catch((err) => {
@@ -114,6 +116,16 @@ module.exports = class opsService{
       }
       return next(err, null, null);  
     })
+  }
+
+  parseOPSResultsInfo(responseData){
+    return {
+      "total_count": responseData['ops:world-patent-data']['ops:biblio-search']['@total-result-count'],
+      "range": {
+          "begin": responseData['ops:world-patent-data']['ops:biblio-search']['ops:range']['@begin'],
+          "end": responseData['ops:world-patent-data']['ops:biblio-search']['ops:range']['@end']
+      }
+    };
   }
 
   splitDocId(docid){
