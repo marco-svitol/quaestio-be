@@ -195,7 +195,7 @@ responses content example:
       ...
     },
     ....
-        {
+    {
         "userinfo": {
             "throttling-control": [
                 [
@@ -249,10 +249,35 @@ parameters:
 |txt|search text pattern|
 |pdfrom|starting date. Date format must match YYYYMMDD|
 |pdto|ending date. Format as above|
-
+|beginRange|if not specified, at most 50 documents will be sent as a result. If specified, the results will be sent in set of ResultsPerPage** starting from beginRange. This is used for pagination.
 \* One of pa or tecarea must be present. Other parameters are optional.
+\** ResultsPerPage is currently 12. In future versions will be customizable per user.
+The response is the same as API v1 but with the new section "results_info" :
 
-The response is the same as API v1.
+```
+[
+    {
+        "doc_num": "BR.112020019905.A2",
+    ...
+    },
+    ....
+    {
+        "userinfo": {
+             ...
+        }
+    },
+    {
+        "resultsinfo": {
+            "total_count" : "631",
+            "range": {
+                "begin": 1,
+                "end": 12
+            }
+        } 
+    }
+]
+
+```
 
  
 ----------------

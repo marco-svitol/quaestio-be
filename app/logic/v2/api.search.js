@@ -21,13 +21,15 @@ exports.search = async(req, res) => {
 	if (req.query.fromField){
 		reqQuery+=validateDate(req.query.fromField, req.query.toField);
 	}
+	
 	reqQuery = cleanQuery(reqQuery);
+	reqQuery+=setRange(req.query.beginRange, getResultPerPage());
 	if (!reqQuery) {
 		logger.warn('search: The query for OPS is empty: nothing to search.');
 		return res.status(200).send({});
 	}
 	logger.verbose(reqQuery);
-	opsQuaestio.publishedDataSearch(reqQuery, (err, body, headers) => {
+	opsQuaestio.publishedDataSearch(reqQuery, (err, body, headers, resultsinfo) => {
 		if (!err) {
 			db._gethistory(req.query.uid, (err, history) => { 
 				if (!err){
@@ -43,6 +45,7 @@ exports.search = async(req, res) => {
 					body = histBody;
 					const userinfo = headers[0]?parseOPSQuota(headers[0]):parseOPSQuota(headers);
 					body.push({userinfo: userinfo});
+					body.push({resultsinfo: resultsinfo });
 					res.status(200).send(body);
 				}else{
 					logger.error(`publishedDataSearch:gethistory ${err.message}. Stack: ${err.stack}`);
@@ -56,6 +59,17 @@ exports.search = async(req, res) => {
 	})
 }
 
+function setRange(beginRange, endRange){
+	if (beginRange && beginRange != 0){
+		return `&Range=${beginRange}-${(+beginRange)+(+endRange)-1}`;
+	}else{
+		return `&Range=1-50`;
+	}
+}
+
+function getResultPerPage(){
+	return 12;
+}
 function cleanQuery(reqQuery){
 	//remove the last AND
 	return reqQuery.slice(0,-5);
