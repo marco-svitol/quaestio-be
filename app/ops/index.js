@@ -73,7 +73,6 @@ module.exports = class opsService{
   async publishedDataSearch(strQuery, next){
     this.commonAxiosInstance.get("/rest-services/published-data/search/biblio?q="+strQuery)
     .then(async (response) => {
-      //Range! 
       let docs=[];
       let opsLights=[];
       let opsResultsInfo = null;
@@ -89,14 +88,11 @@ module.exports = class opsService{
           } 
           for (let opsPublication of opsPublications){
             opsPublication=opsPublication['exchange-document'];
-            let docid=opsPublication['@country']+'.'+opsPublication['@doc-number']+'.'+opsPublication['@kind'];
-            let familyid=opsPublication['@family-id'];
-            let docUrl= this.getLinkFromDocId(docid);
-            //let doctype=opsPublication['@document-id-type'];
-            //if (doctype==="docdb"){
+            const docInfo = this.getDocInfo(opsPublication);
+            let docUrl= this.getLinkFromDocId(docInfo["docNum"]);
               await this.pubblicationDataFiltered(opsPublication, "en", async(err, docData) => {
               if (docData){  
-                  docs.push({"doc_num":docid,"type":"docdb","familyid":familyid,"invention_title":docData.title,"date":docData.date,"abstract":docData.abstract,"applicant":docData.applicant,"inventor_name":docData.inventor,"ops_link":docUrl});
+                  docs.push({"doc_num":docInfo["docNum"],"type":docInfo["docType"],"familyid":docInfo["familyid"],"invention_title":docData.title,"date":docData.date,"abstract":docData.abstract,"applicant":docData.applicant,"inventor_name":docData.inventor,"ops_link":docUrl});
                 }else{
                   throw (err);
                 }
@@ -106,7 +102,6 @@ module.exports = class opsService{
         }
       }
       return next(null, docs, opsLights, opsResultsInfo);
-      //Semaphors + quota
     })
     .catch((err) => {
       if (err.response){
@@ -118,6 +113,31 @@ module.exports = class opsService{
     })
   }
 
+  getDocInfo(opsPublication){
+    const docId = opsPublication["bibliographic-data"]["publication-reference"]["document-id"];
+    let doc = docId.find(doc =>  doc["@document-id-type"] === "epodoc");
+    if (doc){
+      return {
+        "familyid" : doc["@family-id"],
+        "country" : doc["@country"],
+        "kind" : doc["@kind"],
+        "docNum" : doc["doc-number"]["$"],
+        "docType" : doc["@document-id-type"]
+      };
+    }
+    logger.warn(`getDocNum: epodoc type not found`);
+    doc = docId.find(doc =>  doc["@document-id-type"] === "docdb");
+    if (doc){
+      return {
+        "familyid" : doc["@family-id"],
+        "country" : doc["@country"],
+        "kind" : doc["@kind"],
+        "docNum" : doc["country"]["$"].doc["doc-number"]["$"].doc["kind"]["$"],
+        "docType" : doc["@document-id-type"]
+      };
+    }
+  } 
+
   parseOPSResultsInfo(responseData){
     return {
       "total_count": responseData['ops:world-patent-data']['ops:biblio-search']['@total-result-count'],
@@ -128,14 +148,8 @@ module.exports = class opsService{
     };
   }
 
-  splitDocId(docid){
-    const docidSplit = docid.split(".");
-    return {doccountry: docidSplit[0], docnum:docidSplit[1], dockind: docidSplit[2] };
-  }
-
-  getLinkFromDocId(docid){
-    const docCodes = this.splitDocId(docid);
-    return `${opsDOCURL}/familyid/publication/${docCodes.doccountry}${docCodes.docnum}${docCodes.dockind}?q=pn%3D${docCodes.doccountry}${docCodes.docnum}${docCodes.dockind}`;
+  getLinkFromDocId(docNum){
+    return `${opsDOCURL}/familyid/publication/${docNum}?q=pn%3D${docNum}`;
   }
 
   async pubblicationDataFiltered(body, lang, next){
