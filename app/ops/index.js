@@ -231,6 +231,11 @@ module.exports = class opsService{
     for (let imageData of data){
       imagesLinks.push({"desc": imageData['@desc'], "nofpages": imageData['@number-of-pages'], "format" : `${this.pickDocFormat(imageData['ops:document-format-options']['ops:document-format'])}`, "link": imageData['@link']});
     }
+    imagesLinks = imagesLinks.sort((a, b) => {
+      if (a.desc < b.desc) {
+        return -1;
+      }
+    });
     return (imagesLinks);
   }
 
