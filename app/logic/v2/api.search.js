@@ -18,8 +18,8 @@ exports.search = async(req, res) => {
 	if (req.query.txt){
 		reqQuery+=`txt=${req.query.txt} AND `
 		};
-	if (req.query.fromField){
-		reqQuery+=validateDate(req.query.fromField, req.query.toField);
+	if (req.query.pdfrom){
+		reqQuery+=validateDate(req.query.pdfrom, req.query.pdto);
 	}
 	
 	reqQuery = cleanQuery(reqQuery);
