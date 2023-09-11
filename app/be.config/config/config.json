@@ -1,7 +1,7 @@
 {
     "development" : {
         "app": {
-            "loglevel"      : "info",
+            "loglevel"      : "verbose",
             "opsBaseUrl"    : "",
             "opsClientID"   : "",
             "opsClientSecret" : "",
