@@ -10,13 +10,13 @@ exports.search = async(req, res) => {
 	reqQuery="";
 	if (req.query.pa){
 		//Applicants and tecareas MUST not be passed as User input or they will be exposed to SQL injection
-		reqQuery+=`${await getQueryFromId("applicants", req.query.pa, req.query.uid)} AND `
+		reqQuery+=`(${await getQueryFromId("applicants", req.query.pa, req.query.uid)}) AND `
 	};
 	if (req.query.tecarea){
-		reqQuery+=`${await getQueryFromId("tecareas", req.query.tecarea, req.query.uid)} AND `
+		reqQuery+=`(${await getQueryFromId("tecareas", req.query.tecarea, req.query.uid)}) AND `
 		};
 	if (req.query.txt){
-		reqQuery+=`txt=${req.query.txt} AND `
+		reqQuery+=`(txt=${req.query.txt}) AND `
 		};
 	if (req.query.pdfrom){
 		reqQuery+=validateDate(req.query.pdfrom, req.query.pdto);

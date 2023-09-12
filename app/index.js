@@ -8,6 +8,10 @@ const bodyParser = require("body-parser");
 const logger=require('./logger'); 
 const server=require('./server');
 const rTracer = require('cls-rtracer');
+const cors = require('cors');
+// app.use(cors({
+//     origin: ['http://172.30.254.160:3000']
+// }));
 
 app.use(rTracer.expressMiddleware());							// keep s unique ID for each request
 app.use(bodyParser.json()); 									// parse requests of content-type - application/json
