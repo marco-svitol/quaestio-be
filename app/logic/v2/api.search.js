@@ -63,7 +63,7 @@ function setRange(beginRange, endRange){
 	if (beginRange && beginRange != 0){
 		return `&Range=${beginRange}-${(+beginRange)+(+endRange)-1}`;
 	}else{
-		return `&Range=1-50`;
+		return `&Range=1-100`;
 	}
 }
 

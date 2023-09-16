@@ -81,12 +81,13 @@ module.exports = class opsService{
         opsResultsInfo = this.parseOPSResultsInfo(response.data);
         if (response.data){
           let opsPublications = response.data['ops:world-patent-data']['ops:biblio-search']['ops:search-result']['exchange-documents'];
-          opsPublications = this.getFamilyOldests(opsPublications);
+          
           if (!opsPublications.length){ // only one document -> ops is not sending an array. force it.
             let singleDoc = opsPublications;
             opsPublications = [];
             opsPublications.push(singleDoc);
           } 
+          opsPublications = this.getFamilyOldests(opsPublications);
           for (let opsPublication of opsPublications){
             //opsPublication=opsPublication['exchange-document'];
             const docInfo = this.getDocInfo(opsPublication);
