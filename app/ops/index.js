@@ -81,13 +81,15 @@ module.exports = class opsService{
         opsResultsInfo = this.parseOPSResultsInfo(response.data);
         if (response.data){
           let opsPublications = response.data['ops:world-patent-data']['ops:biblio-search']['ops:search-result']['exchange-documents'];
-          if (!opsPublications.length){
+          
+          if (!opsPublications.length){ // only one document -> ops is not sending an array. force it.
             let singleDoc = opsPublications;
             opsPublications = [];
             opsPublications.push(singleDoc);
           } 
+          opsPublications = this.getFamilyOldests(opsPublications);
           for (let opsPublication of opsPublications){
-            opsPublication=opsPublication['exchange-document'];
+            //opsPublication=opsPublication['exchange-document'];
             const docInfo = this.getDocInfo(opsPublication);
             let docUrl= this.getLinkFromDocId(docInfo["docNum"]);
               await this.pubblicationDataFiltered(opsPublication, "en", async(err, docData) => {
@@ -113,12 +115,39 @@ module.exports = class opsService{
     })
   }
 
+  //  aggregate docs with same family and pick the oldest
+              //  if the oldest is a "weird" language introduce language priorities:  EP, US, GB, WO, FR, DE, IT and choose another one
+  getFamilyOldests(opsPublications){
+    const familyGroups = {};
+    opsPublications.forEach(element => {
+      element = element['exchange-document'];
+      const family = element["@family-id"];
+      const elementDate = this.getDate(element['bibliographic-data']['publication-reference']);
+      const familyDate = familyGroups[family] ? this.getDate(familyGroups[family]['bibliographic-data']['publication-reference']) : "";
+      if (!familyGroups[family] || elementDate < familyDate){
+        familyGroups[family] = element;
+      };
+    });
+    const arrayFamilyGroups = Object.values(familyGroups);
+    return arrayFamilyGroups;
+  }
+
+  getDate(doc){
+    const dates = doc['document-id'];
+    if (dates) {
+      return this.filterArrayLang(dates)[0]['date']['$'];
+    }else{
+      logger.debug(`getDate: Date is missing for document docid: xx`);
+      return "";
+    }
+  }
+
   getDocInfo(opsPublication){
     const docId = opsPublication["bibliographic-data"]["publication-reference"]["document-id"];
     let doc = docId.find(doc =>  doc["@document-id-type"] === "epodoc");
     if (doc){
       return {
-        "familyid" : doc["@family-id"],
+        "familyid" : opsPublication["@family-id"],
         "country" : doc["@country"],
         "kind" : doc["@kind"],
         "docNum" : doc["doc-number"]["$"],
@@ -129,7 +158,7 @@ module.exports = class opsService{
     doc = docId.find(doc =>  doc["@document-id-type"] === "docdb");
     if (doc){
       return {
-        "familyid" : doc["@family-id"],
+        "familyid" : opsPublication["@family-id"],
         "country" : doc["@country"],
         "kind" : doc["@kind"],
         "docNum" : doc["country"]["$"].doc["doc-number"]["$"].doc["kind"]["$"],
