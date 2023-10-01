@@ -49,31 +49,6 @@ module.exports._userprofile = async function(uid, next){
   var dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.Int, uid);
   var strQuery = `
-  SELECT 
-  displayname AS "userinfo.displayname", 
-  logopath AS "userinfo.logopath",
-  JSON_QUERY(searchvalues,'$') AS searchvalues 
-  FROM [view.usersprofile] 
-  WHERE uid = @uid FOR JSON PATH
-  `;
-  dbRequest.query(strQuery)
-    .then(dbRequest => {
-      let rows = dbRequest.recordset;
-      if (rows.length > 0){
-          next(null,{success: true, userprofile: rows[0]});
-      }else{
-        next(null,{success: false, message: "Userprofile not found"});
-      }
-    })
-    .catch(err => {
-      next(err,{success: false, message: "DB error"});
-    })
-}
-
-module.exports._userprofile_v2 = async function(uid, next){
-  var dbRequest = await this.poolrequest();
-  dbRequest.input('uid', sql.Int, uid);
-  var strQuery = `
   SELECT
   displayname AS "userinfo.displayname",
   logopath AS "userinfo.logopath",
@@ -129,7 +104,7 @@ BEGIN
 END  
 ELSE  
 BEGIN  
-	  INSERT INTO dochistory (uid, docid, status) VALUES (@uid, @docid, @status)
+	  INSERT INTO dochistory (uid, docid, status) VALUES (@uid, @docid, @status, 0)
 END`
   dbRequest.query(strQuery)
     .then(() => {
@@ -143,7 +118,7 @@ END`
 module.exports._gethistory = async function(uid, next){
   var dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.Int, uid);
-  var strQuery = `SELECT docid, status FROM dochistory WHERE uid = @uid`
+  var strQuery = `SELECT docid, status, bookmark FROM dochistory WHERE uid = @uid`
   dbRequest.query(strQuery)
     .then(dbRequest => {
       let rows = dbRequest.recordset;
