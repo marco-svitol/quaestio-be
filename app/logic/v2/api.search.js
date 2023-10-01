@@ -23,14 +23,15 @@ exports.search = async(req, res) => {
 	}
 	
 	reqQuery = cleanQuery(reqQuery);
-	reqQuery+=setRange(req.query.beginRange, getResultPerPage());
+	//reqQuery+=setRange(req.query.beginRange, getResultPerPage());
 	if (!reqQuery) {
 		logger.warn('search: The query for OPS is empty: nothing to search.');
 		return res.status(200).send({});
 	}
-	logger.verbose(reqQuery);
+	logger.debug(reqQuery);
 	opsQuaestio.publishedDataSearch(reqQuery, (err, body, headers, resultsinfo) => {
 		if (!err) {
+			logger.debug(`search: docsNum=${body.length}`);
 			db._gethistory(req.query.uid, (err, history) => { 
 				if (!err){
 					const histBody = body.map(doc => {
