@@ -64,7 +64,7 @@ responses content example:
 ##  _All the following methods require an authorization key_ :
  ----------------
  # `GET` **/userprofile** : returns user's relevant data to prepare the search page
-version: 1
+ version: 2
 
 parameters:
 
@@ -77,47 +77,6 @@ responses:
 |----|-----------|
 |200|Ok|
 |400|Userid not valid|
-
-
-
-responses content example:
-
-```
-[
-  {
-    "userinfo" : {
-      "displayname" : "Marty McFly",
-      "logopath": "https://quaestiosa.blob.core.windows.net/quaestio/logo_default.jpg"
-    },
-    "searchvalues": {
-	  "applicants" : 
-	  [
-	    "Emmett Brown",
-	    "Einstein",
-	    "Archimede"
-	  ],
-	  "tecareas" : 
-	  [
-	    {
-              "id" : "534223",
-              "name" : "Time travel machine"
-            },
-            {
-	      "id" : "54325",
-              "name" : "Teletrasportation"
-            },
-            ...
-          ]
-      }
-   }
-]
-
-```
- ----------------
- # `GET` **/userprofile** : returns user's relevant data to prepare the search page
- version: 2
-
- parameters: as v1
 
  responses example:
  ```
@@ -147,25 +106,34 @@ responses content example:
                 ...
             ]
         },
-        "userinfo.displayname": "acme"
+        "userinfo":{
+            "displayname": "acme",
+            "logopath": 'https://core.windows.net/quaestio/logo_default'
+        }
     }
 ]
 ```
  # `GET` **/search** : search patent documents
-version: 1
+version: 2
 
 parameters:
 
 |Name|Description|
 |----|-----------|
 |uid*|user id|
-|pa*|patent's applicant|
-|tecarea*|patent tech area|
+|pa*|patent's applicant id|
+|tecarea*|patent tech area id|
 |txt|search text pattern|
 |pdfrom|starting date. Date format must match YYYYMMDD|
 |pdto|ending date. Format as above|
+|beginRange**|<strike>if not specified, at most 50 documents will be sent as a result. If specified, the results will be sent in set of ResultsPerPage** starting from beginRange. This is used for pagination.</strike>|
 
 \* One of pa or tecarea must be present. Other parameters are optional.
+
+\** Feature currently not implemented 
+
+ResultsPerPage is currently 12. In future versions will be customizable per user.
+
 
 responses:
 |Code|Description|
@@ -180,16 +148,18 @@ responses content example:
 ```
 [
     {
-      "doc_num": "BR.112020019905.A2",
-      "type": "docdb",
-      "familyid": "8256708",
-      "invention_title" : "Time machine",
-      "date": "20210105",
       "abstract": "A machine to travel in the past and in the future",
       "applicant": "Emmmet INC.",
+      "bookmark": true,
+      "country": 'DE',
+      "date": '20230602',
+      "doc_num": "BR.112020019905.A2",
+      "familyid": "8256708",
+      "invention_title" : "Time machine",
       "inventor_name" : "Emmett Brown",
       "ops_link" : "https://ops.abcd.com/doc/1234asd",
-      "read_history" : "new"
+      "read_history" : "new",
+      "type": "docdb",
     },
     {
       ...
@@ -225,48 +195,6 @@ responses content example:
             "individualquotaperhour-used": "541368",
             "registeredquotaperweek-used": "1567113"
         }
-    }
-]
-
-```
-|read_history|Description|
-|------------|-----------|
-|new|It's the first time this doc is shown in the results|
-|listed|This doc was already listed previously but not viewed|
-|viewed|This doc has already been opened|
-----------------
-
- # `GET` **/search** : search patent documents
-version: 2
-
-parameters:
-
-|Name|Description|
-|----|-----------|
-|uid*|user id|
-|pa*|patent's applicant id|
-|tecarea*|patent tech area id|
-|txt|search text pattern|
-|pdfrom|starting date. Date format must match YYYYMMDD|
-|pdto|ending date. Format as above|
-|beginRange|if not specified, at most 50 documents will be sent as a result. If specified, the results will be sent in set of ResultsPerPage** starting from beginRange. This is used for pagination.|
-
-\* One of pa or tecarea must be present. Other parameters are optional.
-
-\** ResultsPerPage is currently 12. In future versions will be customizable per user.
-The response is the same as API v1 but with the new section "results_info" :
-
-```
-[
-    {
-        "doc_num": "BR.112020019905.A2",
-    ...
-    },
-    ....
-    {
-        "userinfo": {
-             ...
-        }
     },
     {
         "resultsinfo": {
@@ -280,11 +208,14 @@ The response is the same as API v1 but with the new section "results_info" :
 ]
 
 ```
-
- 
+|read_history|Description|
+|------------|-----------|
+|new|It's the first time this doc is shown in the results|
+|listed|This doc was already listed previously but not viewed|
+|viewed|This doc has already been opened| 
 ----------------
  # `GET` **/opendoc** : returns URL to OPS original doc and list of available images (drawings)
-version: 1
+version: 2
 
 parameters:
 
@@ -360,7 +291,7 @@ responses content example:
 ```
  ----------------
  # `GET` **/firstpageClipping** : returns the modal image
-version: 1
+version: 2
 
 parameters:
 

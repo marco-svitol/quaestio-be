@@ -3,7 +3,6 @@ const msgServerError = require('../../consts').msgServerError;
 const opsQuaestio = require("../../consts").opsQuaestio;
 const db=require('../../database');
 const status = ["new", "listed", "viewed"];
-const parseOPSQuota = require("../v1/api.search").parseOPSQuota;
 
 exports.search = async(req, res) => {
 	//validate params middleware??
@@ -23,29 +22,28 @@ exports.search = async(req, res) => {
 	}
 	
 	reqQuery = cleanQuery(reqQuery);
-	reqQuery+=setRange(req.query.beginRange, getResultPerPage());
+	//reqQuery+=setRange(req.query.beginRange, getResultPerPage());
 	if (!reqQuery) {
 		logger.warn('search: The query for OPS is empty: nothing to search.');
 		return res.status(200).send({});
 	}
-	logger.verbose(reqQuery);
+	logger.debug(reqQuery);
 	opsQuaestio.publishedDataSearch(reqQuery, (err, body, headers, resultsinfo) => {
 		if (!err) {
+			logger.debug(`search: docsNum=${body.length}`);
 			db._gethistory(req.query.uid, (err, history) => { 
 				if (!err){
 					const histBody = body.map(doc => {
-						let f=0;
 						if (history){
-							f = history.find(hdoc =>  hdoc.docid === doc.doc_num);
-							f = f?f.status:0;
+							const f = history.find(hdoc =>  hdoc.docid === doc.doc_num);
+							doc.read_history = f?status[f.status]:status[0];
+							doc.bookmark = f?f.bookmark:false;
 						} 
-						doc.read_history = status[f];
 						return doc;
 					})
-					body = histBody;
-					const userinfo = headers[0]?parseOPSQuota(headers[0]):parseOPSQuota(headers);
+					body = histBody.sort((a,b) => b.date - a.date);
+					const userinfo = headers[0]?this.parseOPSQuota(headers[0]):this.parseOPSQuota(headers);
 					body.push({userinfo: userinfo});
-					body.push({resultsinfo: resultsinfo });
 					res.status(200).send(body);
 				}else{
 					logger.error(`publishedDataSearch:gethistory ${err.message}. Stack: ${err.stack}`);
@@ -98,7 +96,7 @@ async function getQueryFromId (field, id, uid){
 
 exports.userprofile = async(req, res) => {
 	//validate params middleware??
-	db._userprofile_v2(req.query.uid, (err, qresult) => {
+	db._userprofile(req.query.uid, (err, qresult) => {
 		if(err){
 			logger.error(`userprofile: ${msgServerError}: ${err}`);
 			res.status(500).json({message: `userprofile: ${msgServerError}`});
@@ -107,4 +105,49 @@ exports.userprofile = async(req, res) => {
 			res.status(200).json(qresult.userprofile);
 		}
 	})
+}
+
+exports.opendoc = async(req, res) => {
+	//update doc history and return OPS Link
+	db._updatehistory(req.query.uid, req.query.doc_num, status.indexOf("viewed"), (err, qresult) => {
+		if (err){
+			logger.error(`opendoc: ${msgServerError}: ${err}`);
+			res.status(500).json({message: `opendoc: ${msgServerError}`});
+		}else{
+			//retrieve link to firstpageClipping
+			const opslink = opsQuaestio.getLinkFromDocId(req.query.doc_num);
+			opsQuaestio.getImagesLinksFromDocId((req.query.doc_num), (imagesLinks) => {
+				if (imagesLinks){
+					const userinfo = imagesLinks.headers[0]?this.parseOPSQuota(imagesLinks.headers[0]):this.parseOPSQuota(imagesLinks.headers);
+					res.status(200).send({ops_link: opslink, images_links: imagesLinks.imagesLinks, userinfo: userinfo});
+				}else{
+					res.status(200).send({ops_link: opslink, images_links: "", userinfo: ""});
+				}
+				
+			})
+		}
+	})
+}
+
+exports.firstpageClipping = async(req, res) => {
+	const fpcImage = req.query.fpcImage;
+	const fpcImageFormat = req.query.fpcImageFormat;
+	opsQuaestio.getImage(fpcImage, fpcImageFormat, 1, (err,body, headers) => {
+		if (!err) {
+			res.writeHead(200, {
+				'Content-Type': headers['content-type']
+			  });
+			body.pipe(res);
+		}else{
+			logger.error(`firstpageClipping: ${err.message}. Stack: ${err.stack}`)
+			res.status(500).send(msgServerError+" : "+err.message)
+		}
+	})
+} 
+
+exports.parseOPSQuota = function(headers){
+	let throttling = headers["x-throttling-control"].replace(',','').replace('(','').replace(')','').split(' ');
+	throttling = throttling.map(x => {return x.split('=')});
+	let quotas = ({"throttling-control": throttling, "individualquotaperhour-used": headers["x-individualquotaperhour-used"], "registeredquotaperweek-used": headers["x-registeredquotaperweek-used"]});
+	return quotas;
 }
