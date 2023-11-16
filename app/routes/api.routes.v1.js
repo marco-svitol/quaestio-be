@@ -6,11 +6,12 @@ module.exports = myapp => {
   const apisearchv2     = require("../logic/v2/api.search");
   const apihealth       = require("../logic/health");
   const apiauth         = require("../logic/v1/api.auth");
+  const apiauthv2       = require("../logic/v2/api.auth");
   
   const cacheMiddleware = require('../cache').cacheMiddleware;
 
   apiauth.checkJWT.unless = unless;
-  routerapp.use(apiauth.checkJWT.unless({path: ['/api/v1/test','/api/v1/cachereset','/api/v1/auth/login','/api/v1/auth/refresh']}));
+  routerapp.use(apiauth.checkJWT.unless({path: ['/api/v1/test','/api/v1/cachereset','/api/v1/auth/login','/api/v1/auth/refresh','/api/v2/auth/login']}));
 
   cacheMiddleware.unless = unless; 
   routerapp.use(cacheMiddleware.unless({
@@ -22,7 +23,8 @@ module.exports = myapp => {
       '/api/v1/auth/login',
       '/api/v1/auth/refresh',
       '/api/v2/search',
-      '/api/v2/userprofile'
+      '/api/v2/userprofile',
+      '/api/v2/auth/login',
     ]
   }))
 
@@ -30,6 +32,7 @@ module.exports = myapp => {
   routerapp.get("/v1/auth/login",        apiauth.login);
   routerapp.get("/v1/auth/refresh",      apiauth.refresh);
   //V2
+  routerapp.post("/v2/auth/login",       apiauthv2.login);
   routerapp.post("/v2/cachereset",       apitest.cacheReset);
   routerapp.get("/v2/test",              apitest.test );
   routerapp.get("/v2/opstest",           apitest.opstest );
