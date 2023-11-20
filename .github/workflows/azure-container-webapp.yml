@@ -132,6 +132,16 @@ jobs:
                 "name" : "NODE_ENV",
                 "value": "${{ vars.NODE_ENV }}",
                 "slotSetting": false
+              },
+              {
+                "name" : "AUTH0_AUDIENCE",
+                "value": "${{ vars.AUTH0_AUDIENCE }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "AUTH0_DOMAIN",
+                "value": "${{ vars.AUTH0_DOMAIN }}",
+                "slotSetting": false
               }
             ]        
 
