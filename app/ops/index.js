@@ -2,6 +2,7 @@ const axios=require('axios');
 const { id } = require('cls-rtracer');
 const logger=require('../logger'); 
 const opsDOCURL = global.config_data.app.opsDocURL;
+const utils=require('../utils');
 
 //Authentication Axios instance
 let authParams = new URLSearchParams({grant_type : 'client_credentials'});
@@ -305,7 +306,8 @@ module.exports = class opsService{
 
 
   async publishedDataPublicationDocDBImages(docid, next){
-    await this.commonAxiosInstance.get(`/rest-services/published-data/publication/epodoc/${docid}/images`)
+    const docNumWithDot = utils.insertDotBeforeLastAlphanumeric(docid);
+    await this.commonAxiosInstance.get(`/rest-services/published-data/publication/epodoc/${docNumWithDot}/images`)
     .then (async (response) => {
       return next(null, response.data, response.headers);
     })
