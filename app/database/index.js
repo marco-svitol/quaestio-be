@@ -104,7 +104,7 @@ BEGIN
 END  
 ELSE  
 BEGIN  
-	  INSERT INTO dochistory (uid, docid, status) VALUES (@uid, @docid, @status, 0)
+	  INSERT INTO dochistory (uid, docid, status, bookmark) VALUES (@uid, @docid, @status, 0)
 END`
   dbRequest.query(strQuery)
     .then(() => {

@@ -3,6 +3,7 @@ const msgServerError = require('../../consts').msgServerError;
 const opsQuaestio = require("../../consts").opsQuaestio;
 const db=require('../../database');
 const status = ["new", "listed", "viewed"];
+const utils=require('../../utils');
 
 exports.search = async(req, res) => {
 	//validate params middleware??
@@ -18,10 +19,10 @@ exports.search = async(req, res) => {
 		reqQuery+=`(txt=${req.query.txt}) AND `
 		};
 	if (req.query.pdfrom){
-		reqQuery+=validateDate(req.query.pdfrom, req.query.pdto);
+		reqQuery+=utils.validateDate(req.query.pdfrom, req.query.pdto);
 	}
 	
-	reqQuery = cleanQuery(reqQuery);
+	reqQuery = reqQuery.slice(0,-5); //remove the last AND
 	//reqQuery+=setRange(req.query.beginRange, getResultPerPage());
 	if (!reqQuery) {
 		logger.warn('search: The query for OPS is empty: nothing to search.');
@@ -55,34 +56,6 @@ exports.search = async(req, res) => {
 			res.status(500).json({message: `search: ${msgServerError}`});
 		}
 	})
-}
-
-function setRange(beginRange, endRange){
-	if (beginRange && beginRange != 0){
-		return `&Range=${beginRange}-${(+beginRange)+(+endRange)-1}`;
-	}else{
-		return `&Range=1-100`;
-	}
-}
-
-function getResultPerPage(){
-	return 12;
-}
-function cleanQuery(reqQuery){
-	//remove the last AND
-	return reqQuery.slice(0,-5);
-}
-
-function validateDate(fromField, toField){
-	var date_regex = /^(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|1\d|2\d|3[01])$/;
-	fromFieldValid = date_regex.test(fromField);
-	toFieldValid = date_regex.test(toField);
-	if (fromFieldValid && !toFieldValid){toField = fromField}
-	else if (!fromFieldValid && toFieldValid){fromField = toField};
-	if (fromFieldValid || toFieldValid){
-		return `pd within "${fromField} ${toField}" AND `
-	}
-	return null
 }
 
 async function getQueryFromId (field, id, uid){
