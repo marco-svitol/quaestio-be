@@ -47,7 +47,7 @@ module.exports._login = async function(username, password, next){
 
 module.exports._userprofile = async function(uid, next){
   var dbRequest = await this.poolrequest();
-  dbRequest.input('uid', sql.Int, uid);
+  dbRequest.input('uid', sql.VarChar(50), uid);
   var strQuery = `
   SELECT
   displayname AS "userinfo.displayname",
@@ -92,7 +92,7 @@ module.exports._userprofile = async function(uid, next){
 
 module.exports._updatehistory = async function(uid, docid, status, next){
   var dbRequest = await this.poolrequest();
-  dbRequest.input('uid', sql.Int, uid);
+  dbRequest.input('uid', sql.VarChar(50), uid);
   dbRequest.input('docid', sql.NVarChar, docid);
   dbRequest.input('status', sql.Int, status);
   var strQuery = `
@@ -117,7 +117,7 @@ END`
 
 module.exports._gethistory = async function(uid, next){
   var dbRequest = await this.poolrequest();
-  dbRequest.input('uid', sql.Int, uid);
+  dbRequest.input('uid', sql.VarChar(50), uid);
   var strQuery = `SELECT docid, status, bookmark FROM dochistory WHERE uid = @uid`
   dbRequest.query(strQuery)
     .then(dbRequest => {
@@ -136,7 +136,7 @@ module.exports._gethistory = async function(uid, next){
 module.exports._getQuery = async function(field, id, uid){
   var dbRequest = await this.poolrequest();
   dbRequest.input('id', sql.Int, id);
-  dbRequest.input('uid', sql.Int, uid);
+  dbRequest.input('uid', sql.VarChar(50), uid);
   var strQuery = `
   SELECT JSON_VALUE(applicant.value, '$.query') AS query 
   FROM (SELECT searchvalues FROM usersprofile WHERE uid = @uid) as applicants
