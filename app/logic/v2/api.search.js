@@ -71,10 +71,9 @@ exports.userprofile = async(req, res) => {
 	//validate params middleware??
 	db._userprofile(req.query.uid, (err, qresult) => {
 		if(err){
-			logger.error(`userprofile: ${msgServerError}: ${err}`);
+			logger.error(`userprofile: ${qresult.message}: ${err}`);
 			res.status(500).json({message: `userprofile: ${msgServerError}`});
 		}else{
-			logger.verbose({Response: qresult.userprofile});
 			res.status(200).json(qresult.userprofile);
 		}
 	})
