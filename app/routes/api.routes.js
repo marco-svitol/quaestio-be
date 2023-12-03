@@ -18,12 +18,6 @@ module.exports = myapp => {
     path: [
       '/api/v2/test',
       '/api/v2/cachereset',
-      '/api/v2/auth/login',
-      '/api/v2/search',
-      '/api/v2/userprofile',
-      '/api/v2/opstest',
-      '/api/v2/opendoc',
-      '/api/v2/firstpageClipping',
     ]
   }));
 
@@ -36,16 +30,11 @@ module.exports = myapp => {
       '/api/v2/test',
       '/api/v2/opstest',
       "/api/v2/firstpageClipping",
-      '/api/v1/auth/login',
-      '/api/v2/auth/login',
-      '/api/v1/auth/refresh',
       '/api/v2/search',
       '/api/v2/userprofile',
     ]
   }))
 */
-  //v1
-    //not protected
   //V2
     //not protected
   routerapp.post("/v2/cachereset",       apitest.cacheReset);
@@ -56,7 +45,7 @@ module.exports = myapp => {
   routerapp.get("/v2/firstpageClipping", apisearchv2.firstpageClipping);
   routerapp.get("/v2/search",            apisearchv2.search );
   routerapp.get("/v2/userprofile",       apisearchv2.userprofile);
-    //protected Auth0
+  //deprecated
   routerapp.get("/v2/auth0search",       apisearchv2.search );
   routerapp.get("/v2/auth0userprofile",  apisearchv2.userprofile);
   routerapp.get("/v2/auth0opendoc",           apisearchv2.opendoc);
