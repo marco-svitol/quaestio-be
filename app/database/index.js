@@ -24,7 +24,7 @@ JSON_QUERY(
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
     )
 ) AS searchvalues
-FROM [view.usersprofile]
+FROM [usersprofile]
 WHERE uid = @uid
 FOR JSON PATH;
 `
@@ -89,14 +89,10 @@ module.exports._userprofile = async function(uid, next){
   END
   ELSE
   BEGIN
-    INSERT INTO usersprofile (uid, searchValues, _name_)
-    SELECT @uid, searchvalues, 'guest'
+    INSERT INTO usersprofile (uid, searchValues, logopath, displayname)
+    SELECT @uid, searchvalues, ${guestLogo}, 'guest'
     FROM usersprofile
     WHERE uid = 'guest';
-    
-    INSERT INTO users (uid, username, password, displayname, mail, disabled, logopath)
-    SELECT @uid, 'guest', 'xxx', 'guest', 'xxx', 1, '${guestLogo}'
-    ${getuserProfile}
   END
 
   `;
