@@ -25,6 +25,31 @@ module.exports.validateDate = function validateDate(fromField, toField){
 	return null
 }
 
+module.exports.tokenExpirationDate = function tokenExpirationDate(exp){
+	const currentTimestamp = Math.floor(Date.now() / 1000); // Convert to seconds
+	const expirationTimestamp = exp;
+
+	const timeRemainingInSeconds = expirationTimestamp - currentTimestamp;
+
+	if (timeRemainingInSeconds > 0) {
+		const hours = Math.floor(timeRemainingInSeconds / 3600);
+		const minutes = Math.floor((timeRemainingInSeconds % 3600) / 60);
+		const seconds = timeRemainingInSeconds % 60;
+		return {
+			hours: hours,
+			minutes: minutes,
+			seconds: seconds,
+		};
+	} else {
+		// If the token has already expired, return negative values
+		return {
+			hours: 0,
+			minutes: 0,
+			seconds: 0,
+		};
+	}
+  }
+
 //deprecated
 function setRange(beginRange, endRange){
 	if (beginRange && beginRange != 0){

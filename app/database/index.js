@@ -2,6 +2,34 @@ const logger=require('../logger');
 const sqlConfigPool = global.config_data.sqlConfigPool;
 const sql = require('mssql');
 
+const getuserProfile = `
+SELECT
+displayname AS "userinfo.displayname",
+logopath AS "userinfo.logopath",
+JSON_QUERY(
+    (
+        SELECT
+            (
+                SELECT id, name
+                FROM OPENJSON(searchvalues, '$.applicants')
+                WITH (id VARCHAR(10) '$.id', name VARCHAR(100) '$.name')
+                FOR JSON PATH
+            ) AS applicants,
+            (
+                SELECT id, name
+                FROM OPENJSON(searchvalues, '$.tecareas')
+                WITH (id VARCHAR(10) '$.id', name VARCHAR(100) '$.name')
+                FOR JSON PATH
+            ) AS tecareas
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+    )
+) AS searchvalues
+FROM [view.usersprofile]
+WHERE uid = @uid
+FOR JSON PATH;
+`
+
+const guestLogo = 'https://quaestiosa.blob.core.windows.net/quaestio/logo_default.jpg'
 
 const pool = new sql.ConnectionPool(sqlConfigPool);
 const poolConnect = pool.connect()
@@ -49,45 +77,65 @@ module.exports._userprofile = async function(uid, next){
   var dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
   var strQuery = `
-  SELECT
-  displayname AS "userinfo.displayname",
-  logopath AS "userinfo.logopath",
-  JSON_QUERY(
-      (
-          SELECT
-              (
-                  SELECT id, name
-                  FROM OPENJSON(searchvalues, '$.applicants')
-                  WITH (id VARCHAR(10) '$.id', name VARCHAR(100) '$.name')
-                  FOR JSON PATH
-              ) AS applicants,
-              (
-                  SELECT id, name
-                  FROM OPENJSON(searchvalues, '$.tecareas')
-                  WITH (id VARCHAR(10) '$.id', name VARCHAR(100) '$.name')
-                  FOR JSON PATH
-              ) AS tecareas
-          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-      )
-  ) AS searchvalues
-  FROM [view.usersprofile]
-  WHERE uid = @uid
-  FOR JSON PATH;
+  DECLARE @USER_EXISTS INT;
 
+  SELECT @USER_EXISTS = COUNT(*)
+  FROM usersprofile
+  WHERE uid = @uid;
+
+  IF @USER_EXISTS > 0
+  BEGIN
+  ${getuserProfile}
+  END
+  ELSE
+  BEGIN
+    INSERT INTO usersprofile (uid, searchValues, _name_)
+    SELECT @uid, searchvalues, 'guest'
+    FROM usersprofile
+    WHERE uid = 'guest';
+    
+    INSERT INTO users (uid, username, password, displayname, mail, disabled, logopath)
+    SELECT @uid, 'guest', 'xxx', 'guest', 'xxx', 1, '${guestLogo}'
+    ${getuserProfile}
+  END
+
+  `;
+  
+  dbRequest.query(strQuery)
+  .then(dbRequest => {
+    let rows = dbRequest.recordset;
+    if (rows.length > 0){
+        if (rows[0] != null){
+          return next(null,{success: true, userprofile: rows[0]});
+        }
+    } 
+    next(null,{success: false, message: "Userprofile not found"});
+  })
+  .catch(err => {
+    next(err,{success: false, message: "DB error"});
+  })
+
+}
+
+module.exports._createuserprofile = async function(uid, next){
+  var dbRequest = await this.poolrequest();
+  dbRequest.input('uid', sql.VarChar(50), uid);
+  var strQuery = `
+    INSERT INTO usersprofile (uid, searchValues, _name_)
+    SELECT @uid, searchvalues, 'guest'
+    FROM usersprofile
+    WHERE uid = 'guest';
+    
   `;
 
   dbRequest.query(strQuery)
-    .then(dbRequest => {
-      let rows = dbRequest.recordset;
-      if (rows.length > 0){
-          next(null,{success: true, userprofile: rows[0]});
-      }else{
-        next(null,{success: false, message: "Userprofile not found"});
-      }
-    })
-    .catch(err => {
-      next(err,{success: false, message: "DB error"});
-    })
+  .then(() => {
+    next(null,{success: true, message: `Userprofile with uid ${uid} created`});
+  })
+  .catch(err => {
+    next(err,{success: false, message: "DB error"});
+  })
+
 }
 
 module.exports._updatehistory = async function(uid, docid, status, next){

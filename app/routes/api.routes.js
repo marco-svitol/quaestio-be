@@ -7,9 +7,7 @@ module.exports = myapp => {
   const apitest         = require("../logic/v2/api.test.js");
   const apisearchv2     = require("../logic/v2/api.search.js");
   const apihealth       = require("../logic/health.js");
-  const apiauth         = require("../logic/v1/api.auth.js");
-  const apiauthv2       = require("../logic/v2/api.auth.js");
-  
+
   const { errorHandler } = require("../middleware/error.middleware");
   const { notFoundHandler } = require("../middleware/not-found.middleware");
 
@@ -20,29 +18,12 @@ module.exports = myapp => {
     path: [
       '/api/v2/test',
       '/api/v2/cachereset',
-      '/api/v1/auth/login',
       '/api/v2/auth/login',
-      '/api/v1/auth/refresh',
       '/api/v2/search',
       '/api/v2/userprofile',
       '/api/v2/opstest',
       '/api/v2/opendoc',
       '/api/v2/firstpageClipping',
-    ]
-  }));
-
-  apiauth.checkJWT.unless = unless;
-  routerapp.use(apiauth.checkJWT.unless({
-    path: [
-      '/api/v2/test',
-      '/api/v2/cachereset',
-      '/api/v1/auth/login',
-      '/api/v2/auth/login',
-      '/api/v1/auth/refresh',
-      '/api/v2/auth0search',
-      '/api/v2/auth0userprofile',
-      '/api/v2/auth0opendoc',
-      '/api/v2/auth0firstpageClipping',
     ]
   }));
 
@@ -65,11 +46,8 @@ module.exports = myapp => {
 */
   //v1
     //not protected
-  routerapp.get("/v1/auth/login",        apiauth.login);
-  routerapp.get("/v1/auth/refresh",      apiauth.refresh);
   //V2
     //not protected
-  routerapp.post("/v2/auth/login",       apiauthv2.login);
   routerapp.post("/v2/cachereset",       apitest.cacheReset);
   routerapp.get("/v2/test",              apitest.test );
     //protected
