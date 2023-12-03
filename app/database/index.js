@@ -90,7 +90,7 @@ module.exports._userprofile = async function(uid, next){
   ELSE
   BEGIN
     INSERT INTO usersprofile (uid, searchValues, logopath, displayname)
-    SELECT @uid, searchvalues, ${guestLogo}, 'guest'
+    SELECT @uid, searchvalues, '${guestLogo}', 'guest'
     FROM usersprofile
     WHERE uid = 'guest';
   END
