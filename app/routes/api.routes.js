@@ -18,9 +18,7 @@ module.exports = myapp => {
     path: [
       '/api/v2/test',
       '/api/v2/cachereset',
-      '/api/v1/auth/login',
       '/api/v2/auth/login',
-      '/api/v1/auth/refresh',
       '/api/v2/search',
       '/api/v2/userprofile',
       '/api/v2/opstest',
@@ -48,7 +46,6 @@ module.exports = myapp => {
 */
   //v1
     //not protected
-  routerapp.get("/v1/auth/refresh",      apiauth.refresh);
   //V2
     //not protected
   routerapp.post("/v2/cachereset",       apitest.cacheReset);

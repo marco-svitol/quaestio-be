@@ -10,10 +10,10 @@ exports.search = async(req, res) => {
 	reqQuery="";
 	if (req.query.pa){
 		//Applicants and tecareas MUST not be passed as User input or they will be exposed to SQL injection
-		reqQuery+=`(${await getQueryFromId("applicants", req.query.pa, req.query.uid)}) AND `
+		reqQuery+=`(${await getQueryFromId("applicants", req.query.pa, req.auth.payload.sub)}) AND `
 	};
 	if (req.query.tecarea){
-		reqQuery+=`(${await getQueryFromId("tecareas", req.query.tecarea, req.query.uid)}) AND `
+		reqQuery+=`(${await getQueryFromId("tecareas", req.query.tecarea, req.auth.payload.sub)}) AND `
 		};
 	if (req.query.txt){
 		reqQuery+=`(txt=${req.query.txt}) AND `
@@ -32,7 +32,7 @@ exports.search = async(req, res) => {
 	opsQuaestio.publishedDataSearch(reqQuery, (err, body, headers, resultsinfo) => {
 		if (!err) {
 			logger.debug(`search: docsNum=${body.length}`);
-			db._gethistory(req.query.uid, (err, history) => { 
+			db._gethistory(req.auth.payload.sub, (err, history) => { 
 				if (!err){
 					const histBody = body.map(doc => {
 						if (history){
@@ -69,7 +69,7 @@ async function getQueryFromId (field, id, uid){
 
 exports.userprofile = async(req, res) => {
 	//validate params middleware??
-	db._userprofile(req.query.uid, (err, qresult) => {
+	db._userprofile(req.auth.payload.sub, (err, qresult) => {
 		if(err){
 			logger.error(`userprofile: ${qresult.message}: ${err}`);
 			res.status(500).json({message: `userprofile: ${msgServerError}`});
@@ -81,7 +81,7 @@ exports.userprofile = async(req, res) => {
 
 exports.opendoc = async(req, res) => {
 	//update doc history and return OPS Link
-	db._updatehistory(req.query.uid, req.query.doc_num, status.indexOf("viewed"), (err, qresult) => {
+	db._updatehistory(req.auth.payload.sub, req.query.doc_num, status.indexOf("viewed"), (err, qresult) => {
 		if (err){
 			logger.error(`opendoc: ${msgServerError}: ${err}`);
 			res.status(500).json({message: `opendoc: ${msgServerError}`});
