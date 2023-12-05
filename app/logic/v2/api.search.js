@@ -81,7 +81,7 @@ exports.userprofile = async(req, res) => {
 
 exports.opendoc = async(req, res) => {
 	//update doc history and return OPS Link
-	db._updatehistory(req.auth.payload.sub, req.query.doc_num, status.indexOf("viewed"), (err, qresult) => {
+	db._updatehistory(req.auth.payload.sub, req.query.doc_num, status.indexOf("viewed"), (err) => {
 		if (err){
 			logger.error(`opendoc: ${msgServerError}: ${err}`);
 			res.status(500).json({message: `opendoc: ${msgServerError}`});
@@ -98,6 +98,19 @@ exports.opendoc = async(req, res) => {
 				
 			})
 		}
+	})
+}
+
+
+exports.bookmark = async(req, res) => {
+	//update boookmark
+	db._updatebookmark(req.auth.payload.sub, req.query.doc_num, req.query.bookmark, status.indexOf("new") ,(err) => {
+		if (err){
+			logger.error(`bookmark: ${msgServerError}: ${err}`);
+			res.status(500).json({message: `bookmark: ${msgServerError}`});
+		}else{
+			res.status(200).send();
+		}		
 	})
 }
 

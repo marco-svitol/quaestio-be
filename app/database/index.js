@@ -159,6 +159,32 @@ END`
     })
 }
 
+module.exports._updatebookmark = async function(uid, docid, bookmark, status, next){
+  var dbRequest = await this.poolrequest();
+  dbRequest.input('uid', sql.VarChar(50), uid);
+  dbRequest.input('docid', sql.NVarChar, docid);
+  dbRequest.input('bookmark', sql.Bit, bookmark);
+  dbRequest.input('status', sql.Int, status);
+  var strQuery = `
+IF EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)  
+BEGIN
+	UPDATE dochistory   
+	SET bookmark = @bookmark
+	WHERE uid = @uid AND docid = @docid;  
+END  
+ELSE  
+BEGIN  
+	  INSERT INTO dochistory (uid, docid, status, bookmark) VALUES (@uid, @docid, @status , 1)
+END`
+  dbRequest.query(strQuery)
+    .then(() => {
+      next(null);
+    })
+    .catch(err => {
+      next(err);
+    })
+}
+
 module.exports._gethistory = async function(uid, next){
   var dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
