@@ -42,6 +42,7 @@ module.exports = myapp => {
     //protected
   routerapp.get("/v2/opstest",           apitest.opstest );
   routerapp.get("/v2/opendoc",           apisearchv2.opendoc);
+  routerapp.get("/v2/bookmark",          apisearchv2.bookmark);
   routerapp.get("/v2/firstpageClipping", apisearchv2.firstpageClipping);
   routerapp.get("/v2/search",            apisearchv2.search );
   routerapp.get("/v2/userprofile",       apisearchv2.userprofile);
