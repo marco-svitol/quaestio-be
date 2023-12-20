@@ -104,6 +104,7 @@ exports.opendoc = async(req, res) => {
 
 exports.bookmark = async(req, res) => {
 	//update boookmark
+	// TODO: save docinfo info to DB
 	//add a middleware to check query params!
 	const bookmark = parseInt(req.query.bookmark, 10) || 0;
 	db._updatebookmark(req.auth.payload.sub, req.query.doc_num, bookmark, status.indexOf("new") ,(err) => {

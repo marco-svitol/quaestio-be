@@ -89,9 +89,9 @@ module.exports.srvconsoledir = function (request, start=1, err = 0){ //internal:
           srvname == '/login'
           ){return;}  //do not print health service to prevent logs flood! 
 			let msg;
-      if (request.method === 'POST'){
+      if (request.method === 'POST' || request.method === 'PATCH'){
         let params = JSON.stringify(request.body)
-        msg=`POST ${srvname} request from ${request.connection.remoteAddress}. Body:${params}`;
+        msg=`${request.method} ${srvname} request from ${request.connection.remoteAddress}. Body:${params}`;
       }else{
         msg=`GET request ${request.originalUrl} from ${request.connection.remoteAddress}`;
       }
