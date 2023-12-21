@@ -8,22 +8,28 @@ const utils=require('../../utils');
 exports.search = async(req, res) => {
 	//validate params middleware??
 	reqQuery="";
-	if (req.query.pa){
-		//Applicants and tecareas MUST not be passed as User input or they will be exposed to SQL injection
-		reqQuery+=`(${await getQueryFromId("applicants", req.query.pa, req.auth.payload.sub)}) AND `
-	};
-	if (req.query.tecarea){
-		reqQuery+=`(${await getQueryFromId("tecareas", req.query.tecarea, req.auth.payload.sub)}) AND `
-		};
-	if (req.query.txt){
-		reqQuery+=`(txt=${req.query.txt}) AND `
-		};
-	if (req.query.pdfrom){
-		reqQuery+=utils.validateDate(req.query.pdfrom, req.query.pdto);
+	if (typeof req.query.pn === "string" && req.query.pn.trim() !== "") {
+		reqQuery = `pn=${req.query.pn}`;
+	} else {
+		const conditions = [];
+
+		if (req.query.pa) {
+			conditions.push(await getQueryFromId("applicants", req.query.pa, req.auth.payload.sub));
+		}
+
+		if (req.query.tecarea) {
+			conditions.push(await getQueryFromId("tecareas", req.query.tecarea, req.auth.payload.sub));
+		}
+
+		if (req.query.pdfrom) {
+			conditions.push(utils.validateDate(req.query.pdfrom, req.query.pdto));
+		}
+
+		if (conditions.length > 0) {
+			reqQuery = conditions.join(" AND ");
+		}
 	}
-	
-	reqQuery = reqQuery.slice(0,-5); //remove the last AND
-	//reqQuery+=setRange(req.query.beginRange, getResultPerPage());
+
 	if (!reqQuery) {
 		logger.warn('search: The query for OPS is empty: nothing to search.');
 		return res.status(200).send({});

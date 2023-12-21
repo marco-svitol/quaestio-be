@@ -6,6 +6,7 @@ module.exports = myapp => {
 
   const apitest         = require("../logic/v2/api.test.js");
   const apisearchv2     = require("../logic/v2/api.search.js");
+  const apisearchbookmark    = require("../logic/v2/api.searchbookmark.js");
   const apihealth       = require("../logic/health.js");
 
   const { errorHandler } = require("../middleware/error.middleware");
@@ -46,7 +47,7 @@ module.exports = myapp => {
   routerapp.get("/v2/firstpageClipping", apisearchv2.firstpageClipping);
   routerapp.get("/v2/search",            apisearchv2.search );
   routerapp.get("/v2/userprofile",       apisearchv2.userprofile);
-  routerapp.get("/v2/searchbookmark",   apisearchv2.searchbookmark);
+  routerapp.get("/v2/searchbookmark",   apisearchbookmark.searchbookmark);
 
 
   myapp.use('/api', routerapp);

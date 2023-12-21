@@ -20,7 +20,7 @@ module.exports.validateDate = function validateDate(fromField, toField){
 	if (fromFieldValid && !toFieldValid){toField = fromField}
 	else if (!fromFieldValid && toFieldValid){fromField = toField};
 	if (fromFieldValid || toFieldValid){
-		return `pd within "${fromField} ${toField}" AND `
+		return `pd within "${fromField} ${toField}" `
 	}
 	return null
 }
