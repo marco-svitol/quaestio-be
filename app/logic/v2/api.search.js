@@ -118,7 +118,8 @@ exports.bookmark = async(req, res) => {
 			logger.error(`bookmark: ${msgServerError}: ${err}`);
 			res.status(500).json({message: `bookmark: ${msgServerError}`});
 		}else{
-			res.status(200).send();
+			const booleanResult = !!bookmark;
+			res.status(200).json({bookmark: booleanResult});
 		}		
 	})
 }
