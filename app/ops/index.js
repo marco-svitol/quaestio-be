@@ -94,7 +94,7 @@ module.exports = class opsService{
       // Filter for Kind type, get page range, get response headers for Lights
       const patentServiceResponseParsed = this.parsePatentServiceResponse(await this.commonAxiosInstance.get(queryUrl));
       
-      logger.debug(`getAllDocuments: pageStart=${pageStart}; pageEnd=${pageEnd}; total: ${patentServiceResponseParsed.opsPublications.length}(=${patentServiceResponseParsed.opsResultsInfo.total_count}-${patentServiceResponseParsed.opsResultsInfo.total_count-patentServiceResponseParsed.opsPublications.length})`);
+      logger.debug(`getAllDocumentsRecurse: pageStart=${pageStart}; pageEnd=${pageEnd}; total: ${patentServiceResponseParsed.opsPublications.length}(=${patentServiceResponseParsed.opsResultsInfo.total_count}-${patentServiceResponseParsed.opsResultsInfo.total_count-patentServiceResponseParsed.opsPublications.length})`);
       
       const filteredDocs = [];
       for (let opsPublication of patentServiceResponseParsed.opsPublications) {
@@ -134,7 +134,7 @@ module.exports = class opsService{
 
       if (nextPageStart <= patentServiceResponseParsed.opsResultsInfo.total_count) {
         // Recursively call the function with the next page range
-        return this.getAllDocuments(strQuery, nextPageStart, nextPageEnd, allDocs, patentServiceResponseParsed.opsLights);
+        return this.getAllDocumentsRecurse(strQuery, nextPageStart, nextPageEnd, allDocs, patentServiceResponseParsed.opsLights);
       }
   
       // Return all documents and the opsLights from the last iteration when done
