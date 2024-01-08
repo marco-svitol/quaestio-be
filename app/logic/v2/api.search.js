@@ -37,7 +37,7 @@ exports.search = async(req, res) => {
 	logger.debug(reqQuery);
 	opsQuaestio.publishedDataSearch(reqQuery, (err, body, headers, resultsinfo) => {
 		if (!err) {
-			logger.debug(`search: docsNum=${body.length}`);
+			logger.debug(`publishedDataSearch: total filtered and grouped by family: ${body.length}`);
 			db._gethistory(req.auth.payload.sub, (err, history) => { 
 				if (!err){
 					const histBody = body.map(doc => {
