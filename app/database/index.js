@@ -47,32 +47,6 @@ module.exports.poolrequest = async function(){
 	return pool.request();
 }
 
-module.exports._login = async function(username, password, next){
-  var dbRequest = await this.poolrequest();
-	dbRequest.input('username',sql.VarChar(255),username);
-	dbRequest.input('password',sql.VarChar(255),password);
-  let strQuery = `SELECT uid, disabled FROM users WHERE username = @username AND password = CONVERT(NVARCHAR(256),HASHBYTES('MD5', @password),2);`
-  logger.verbose({SQLQuery: strQuery}); 
-  dbRequest.query(strQuery)
-    .then(dbRequest => {
-      let rows = dbRequest.recordset;
-      if (rows.length > 0){
-        if (!rows[0].disabled){
-          next(null,{success: true, uid: rows[0].uid});
-        }
-        else{
-          next(null,{success: false, uid: rows[0].uid, message: "disabled"});
-        }
-      }
-      else{
-        next(null,{success: false, uid: null, message: "not found or wrong password"});
-      }
-    })
-    .catch(err => {
-      next(err,{success: false, uid: null, message: "not found or wrong password"});
-    })
-}
-
 module.exports._userprofile = async function(uid, next){
   var dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
@@ -159,22 +133,23 @@ END`
     })
 }
 
-module.exports._updatebookmark = async function(uid, docid, bookmark, status, next){
+module.exports._updatebookmark = async function(uid, docid, bookmark, status, docmetadata = '', next){
   var dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
   dbRequest.input('docid', sql.NVarChar, docid);
   dbRequest.input('bookmark', sql.Bit, bookmark);
   dbRequest.input('status', sql.Int, status);
+  dbRequest.input('docmetadata', sql.NVarChar, docmetadata);
   var strQuery = `
 IF EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)  
 BEGIN
 	UPDATE dochistory   
-	SET bookmark = @bookmark
+	SET bookmark = @bookmark, docmetadata = @docmetadata
 	WHERE uid = @uid AND docid = @docid;  
 END  
 ELSE  
 BEGIN  
-	  INSERT INTO dochistory (uid, docid, status, bookmark) VALUES (@uid, @docid, @status , 1)
+	  INSERT INTO dochistory (uid, docid, status, bookmark, docmetadata) VALUES (@uid, @docid, @status , 1, @docmetadata)
 END`
   dbRequest.query(strQuery)
     .then(() => {
@@ -218,4 +193,40 @@ module.exports._getQuery = async function(field, id, uid){
     return (null, qResult.recordset[0].query); 
   }
   throw Error(`The query ${strQuery} returned no results.`);
+}
+
+module.exports._getbookmarks = async function(uid, next){
+  var dbRequest = await this.poolrequest();
+  dbRequest.input('uid', sql.VarChar(50), uid);
+  var strQuery = `
+  SELECT
+  JSON_VALUE(docmetadata, '$.doc_num') AS doc_num,
+  JSON_VALUE(docmetadata, '$.type') AS type,
+  JSON_VALUE(docmetadata, '$.familyid') AS familyid,
+  JSON_VALUE(docmetadata, '$.country') AS country,
+  JSON_VALUE(docmetadata, '$.invention_title') AS invention_title,
+  JSON_VALUE(docmetadata, '$.date') AS date,
+  JSON_VALUE(docmetadata, '$.abstract') AS abstract,
+  JSON_VALUE(docmetadata, '$.applicant') AS applicant,
+  JSON_VALUE(docmetadata, '$.inventor_name') AS inventor_name,
+  JSON_VALUE(docmetadata, '$.ops_link') AS ops_link,
+  status as read_history,
+  bookmark 
+  
+  FROM dochistory 
+  WHERE
+  uid = @uid AND bookmark = 1
+`
+dbRequest.query(strQuery)
+.then(dbRequest => {
+  let rows = dbRequest.recordset;
+  if (rows.length > 0){
+      next(null, rows);
+  }else{
+    next(null,null);
+  }
+})
+.catch(err => {
+  next(err,null);
+})
 }

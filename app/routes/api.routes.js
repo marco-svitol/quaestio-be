@@ -1,13 +1,12 @@
 module.exports = myapp => {
-  var {unless}          = require('express-unless');
+  var { unless } = require('express-unless');
 
-  const routerapp      = require("express").Router();
-  const routermetrics   = require("express").Router();
+  const routerapp = require("express").Router();
+  const routermetrics = require("express").Router();
 
-  const apitest         = require("../logic/v2/api.test.js");
-  const apisearchv2     = require("../logic/v2/api.search.js");
-  const apisearchbookmark    = require("../logic/v2/api.searchbookmark.js");
-  const apihealth       = require("../logic/health.js");
+  const apitest = require("../logic/v2/api.test.js");
+  const apisearchv2 = require("../logic/v2/api.search.js");
+  const apihealth = require("../logic/health.js");
 
   const { errorHandler } = require("../middleware/error.middleware");
   const { notFoundHandler } = require("../middleware/not-found.middleware");
@@ -37,24 +36,24 @@ module.exports = myapp => {
   }))
 */
   //V2
-    //not protected
-  routerapp.post("/v2/cachereset",       apitest.cacheReset);
-  routerapp.get("/v2/test",              apitest.test );
-    //protected
-  routerapp.get("/v2/opstest",           apitest.opstest );
-  routerapp.get("/v2/opendoc",           apisearchv2.opendoc);
-  routerapp.patch("/v2/bookmark",          apisearchv2.bookmark);
+  //not protected
+  routerapp.post("/v2/cachereset", apitest.cacheReset);
+  routerapp.get("/v2/test", apitest.test);
+  //protected
+  routerapp.get("/v2/opstest", apitest.opstest);
+  routerapp.get("/v2/opendoc", apisearchv2.opendoc);
+  routerapp.patch("/v2/bookmark", apisearchv2.bookmark);
   routerapp.get("/v2/firstpageClipping", apisearchv2.firstpageClipping);
-  routerapp.get("/v2/search",            apisearchv2.search );
-  routerapp.get("/v2/userprofile",       apisearchv2.userprofile);
-  routerapp.get("/v2/searchbookmark",   apisearchbookmark.searchbookmark);
+  routerapp.get("/v2/search", apisearchv2.search);
+  routerapp.get("/v2/userprofile", apisearchv2.userprofile);
+  routerapp.get("/v2/searchbookmark", apisearchv2.searchbookmark);
 
 
   myapp.use('/api', routerapp);
 
   routerapp.use(errorHandler);
   routerapp.use(notFoundHandler);
-  
+
   routermetrics.get("/health", apihealth.health);
   myapp.use('/', routermetrics);
 };
