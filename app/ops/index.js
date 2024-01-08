@@ -72,7 +72,7 @@ module.exports = class opsService{
   }
 
   async publishedDataSearch(strQuery, next){
-    this.getAllDocuments(strQuery)
+    this.getAllDocumentsRecurse(strQuery)
       .then(result => {
         result.documents = this.getFamilyOldests(result.documents); // Call getFamilyOldests here
         return next(null, result.documents, result.opsLights);
@@ -86,31 +86,15 @@ module.exports = class opsService{
       return next(err, null, null);  
     })
   }
-
-  filterKind(docs){
-    if (!Array.isArray(docs)) {
-      docs = [docs];
-    }
-    return docs.filter(
-        d => d['exchange-document']['@kind'][0] !== 'T' && d['exchange-document']['@kind'][0] !== ['D']
-      );
-  }
-
-  parsePatentServiceResponse(response){
-    return {
-      "opsLights":  [response.headers],
-      "opsResultsInfo": this.parseOPSResultsInfo(response.data),
-      "opsPublications": this.filterKind(response.data['ops:world-patent-data']['ops:biblio-search']['ops:search-result']['exchange-documents'])
-    }
-  }
-
-  async getAllDocuments(strQuery, pageStart = 1, pageEnd = 100, allDocs = [], lastOpsLights = null) {
+  
+  async getAllDocumentsRecurse(strQuery, pageStart = 1, pageEnd = 100, allDocs = [], lastOpsLights = null) {
     try {
       const range = `${pageStart}-${pageEnd}`;
       const queryUrl = `/rest-services/published-data/search/biblio?q=${strQuery}&Range=${range}`;
+      // Filter for Kind type, get page range, get response headers for Lights
       const patentServiceResponseParsed = this.parsePatentServiceResponse(await this.commonAxiosInstance.get(queryUrl));
       
-      logger.debug(`getAllDocuments: pageStart=${pageStart}; pageEnd=${pageEnd}; total: ${patentServiceResponseParsed.opsResultsInfo.total_count}`);
+      logger.debug(`getAllDocuments: pageStart=${pageStart}; pageEnd=${pageEnd}; total: ${patentServiceResponseParsed.opsPublications.length}(=${patentServiceResponseParsed.opsResultsInfo.total_count}-${patentServiceResponseParsed.opsResultsInfo.total_count-patentServiceResponseParsed.opsPublications.length})`);
       
       const filteredDocs = [];
       for (let opsPublication of patentServiceResponseParsed.opsPublications) {
@@ -119,7 +103,7 @@ module.exports = class opsService{
         const docUrl = this.getLinkFromDocId(docInfo["docNum"]);
 
         const docData = await new Promise((resolve, reject) => {
-          this.pubblicationDataFiltered(opsPublication, "en", (err, data) => {
+          this.publicationDataFiltered(opsPublication, "en", (err, data) => {
             if (data) {
               resolve(data);
             } else {
@@ -161,29 +145,57 @@ module.exports = class opsService{
   }
 
   //  aggregate docs with same family and pick the oldest
-              //  if the oldest is a "weird" language introduce language priorities:  EP, US, GB, WO, FR, DE, IT and choose another one
+  //  if the oldest is a "weird" language introduce language priorities:  EP, US, GB, WO, FR, DE, IT and choose another one
   getFamilyOldests(opsPublications) {
-      const countryPriority = ['EP', 'WO', 'US', 'GB', 'DE', 'FR', 'IT'];
+    const countryPriority = ['EP', 'WO', 'US', 'GB', 'DE', 'FR', 'IT'];
 
-      const familyGroups = {};
+    const familyGroups = {};
 
-      opsPublications.forEach(element => {
-          const family = element["familyid"];
-          const elementDate = element['date'];
-          const familyElement = familyGroups[family];
+    opsPublications.forEach(element => {
+        const family = element["familyid"];
+        const elementDate = element['date'];
+        const familyElement = familyGroups[family];
 
-          if (
-              !familyElement ||
-              countryPriority.indexOf(element['country']) < countryPriority.indexOf(familyElement['country']) ||
-              (countryPriority.indexOf(element['country']) === countryPriority.indexOf(familyElement['country']) && elementDate < familyElement['date'])
-          ) {
-              familyGroups[family] = element;
-          }
-      });
+        if (
+            !familyElement ||
+            countryPriority.indexOf(familyElement['country']) < 0 ||
+            countryPriority.indexOf(element['country']) < countryPriority.indexOf(familyElement['country']) ||
+            (countryPriority.indexOf(element['country']) === countryPriority.indexOf(familyElement['country']) && elementDate < familyElement['date'])
+        ) {
+            familyGroups[family] = element;
+        }
+    });
 
-      const arrayFamilyGroups = Object.values(familyGroups);
-      return arrayFamilyGroups;
+    const arrayFamilyGroups = Object.values(familyGroups);
+    return arrayFamilyGroups;
   }
+
+  parsePatentServiceResponse(response) {
+    const filterValidDocuments = (documents) => {
+      const exchangeDocument = documents['ops:world-patent-data']['ops:biblio-search']['ops:search-result']?.['exchange-documents'];
+      const filteredDocs = Array.isArray(exchangeDocument) ? exchangeDocument : [exchangeDocument];
+      return filteredDocs.filter(
+        doc => doc['exchange-document']['@kind'][0] !== 'T' && doc['exchange-document']['@kind'][0] !== 'D'
+      );
+    };
+  
+    const parseOPSResultsInfo = (responseData) => {
+      const biblioSearch = responseData['ops:world-patent-data']['ops:biblio-search'];
+      return {
+        total_count: biblioSearch['@total-result-count'],
+        range: {
+          begin: biblioSearch['ops:range']['@begin'],
+          end: biblioSearch['ops:range']['@end']
+        }
+      };
+    };
+  
+    return {
+      opsLights: [response.headers],
+      opsResultsInfo: parseOPSResultsInfo(response.data),
+      opsPublications: filterValidDocuments(response.data)
+    };
+  }  
 
   getDate(doc){
     const dates = doc['document-id'];
@@ -203,7 +215,7 @@ module.exports = class opsService{
         "familyid" : opsPublication["@family-id"],
         "country" : opsPublication["@country"],
         "kind" : opsPublication["@kind"],
-        "docNum" : opsPublication["@country"]+opsPublication["@doc-number"]+opsPublication["@kind"],//doc["doc-number"]["$"],
+        "docNum" : opsPublication["@country"]+opsPublication["@doc-number"]+opsPublication["@kind"],
         "docType" : doc["@document-id-type"]
       };
     }
@@ -220,89 +232,77 @@ module.exports = class opsService{
     }
   } 
 
-  parseOPSResultsInfo(responseData){
-    return {
-      "total_count": responseData['ops:world-patent-data']['ops:biblio-search']['@total-result-count'],
-      "range": {
-          "begin": responseData['ops:world-patent-data']['ops:biblio-search']['ops:range']['@begin'],
-          "end": responseData['ops:world-patent-data']['ops:biblio-search']['ops:range']['@end']
-      }
-    };
-  }
-
   getLinkFromDocId(docNum){
     return `${opsDOCURL}/familyid/publication/${docNum}?q=pn%3D${docNum}`;
   }
 
-  async pubblicationDataFiltered(body, lang, next){
-    let docData={};
-    const docid = body['bibliographic-data']['application-reference']['@doc-id']; 
-    
-    const titles      = body['bibliographic-data']['invention-title']; 
-    if (titles) {
-      docData.title = this.filterArrayLang(titles, lang)[0]['$'];
-    }else{
-      docData.title = "";
-      logger.verbose(`Title is missing for document docid: ${docid}`);
-    }
 
-    docData.date = "";
+  async publicationDataFiltered(body, lang, next) {
+    const filterArrayLang = (field, lang) => {
+      if (Array.isArray(field)) {
+        const filteredDoc = lang ? field.find(d => d['@lang'] === lang) : field[0];
+        return filteredDoc;
+      } else {
+        return field;
+      }
+    };
+  
+    const docData = {};
+    const docNum = body['@country']+body['@doc-number'];
+  
+    const processField = (field, logMessage) => {
+      const filteredData = filterArrayLang(field, lang);
+      if (filteredData) {
+        return filteredData['$'];
+      } else {
+        logger.verbose(`${logMessage} for document num: ${docNum}`);
+        return '';
+      }
+    };
+  
+    docData.title = processField(body['bibliographic-data']['invention-title'], 'Title is missing');
+    // Process 'publication-reference' array and get the 'date' from the first occurrence
     const publicationReferences = body['bibliographic-data']['publication-reference']['document-id'];
-    if (publicationReferences) {
-      const publicationReferencesFiltered = this.filterArrayLang(publicationReferences,lang)[0];
-      if (publicationReferencesFiltered['date']){
-        docData.date = publicationReferencesFiltered['date']['$'];
-      }else{
-        logger.verbose(`Date is missing for document docid: ${docid}`);
+
+    if (Array.isArray(publicationReferences)) {
+      const firstDocWithDate = publicationReferences.find(doc => doc['date']);
+      docData.date = firstDocWithDate ? firstDocWithDate['date']['$'] : '';
+    } else {
+      docData.date = processField(publicationReferences?.['date'], 'Date is missing');
+    }
+  
+    // Check if 'body['abstract']' exists before attempting to access its properties
+    if (body['abstract']) {
+      if (Array.isArray(body['abstract'])) {
+        const field = filterArrayLang(body['abstract'], lang);
+        docData.abstract = field['p'];
+      } else {
+        docData.abstract = processField(body['abstract']['p'], 'Abstract is missing');
       }
-    }else{
-      logger.verbose(`publication-reference.document-id is missing for document docid: ${docid}`);
+    } else {
+      docData.abstract = '';
+      logger.verbose(`Abstract is missing for document num: ${docNum}`);
     }
-
-    const abstracts   = body['abstract'];
-    if (abstracts) {
-      docData.abstract  = this.filterArrayLang(abstracts,lang)[0]['p']['$'];
-    }else{
-      docData.abstract  = "";
-      logger.verbose(`Abstract is missing for document docid: ${docid}`);
-    }
-
-    const applicants  = body['bibliographic-data']['parties']['applicants']['applicant'];
-    if (applicants) {
-      docData.applicant = this.filterArrayLang(applicants)[0]['applicant-name']['name']['$'];
-    }else{
-      docData.applicant  = "";
-      logger.verbose(`Applicant is missing for document docid: ${docid}`);
-    }
-    
-    const inventors   =  body['bibliographic-data']['parties']['inventors'];
+  
+    docData.applicant = processField(body['bibliographic-data']['parties']['applicants'], 'Applicant is missing');
+  
+    const inventors = body['bibliographic-data']['parties']['inventors'];
     if (inventors) {
-      const inventorswithlength = this.filterArrayLang(inventors['inventor']);
-      docData.inventor  = inventorswithlength[0]['inventor-name']['name']['$'];
-      
-      if (inventorswithlength[1]){
-        docData.inventor += ` (+${inventorswithlength[1]})`;
+      const filteredInventor = filterArrayLang(inventors['inventor']);
+      const inventorLength = inventors['inventor'].length;
+      docData.inventor = filteredInventor['inventor-name']['name']['$'];
+  
+      if (inventorLength > 1) {
+        docData.inventor += ` (+${inventorLength - 1})`;
       }
-    }else{
-      docData.inventor = "";
-      logger.verbose(`Inventor is missing for document docid: ${docid}`);
+    } else {
+      docData.inventor = '';
+      logger.verbose(`Inventor is missing for document num: ${docNum}`);
     }
+  
     return next(null, docData);
   }
-
-  filterArrayLang(field, lang){
-    if (Array.isArray(field)){
-      if (lang){
-        const doc = field.filter(d=>d['@lang']==lang)[0];
-        if (doc){ 
-          return [doc, field.length];
-        }
-      }
-      return [field[0],field.length];
-    }else{
-      return [field,null];
-    }
-  }
+  
 
 
   async publishedDataPublicationDocDBImages(docid, next){

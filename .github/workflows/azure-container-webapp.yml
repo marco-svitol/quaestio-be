@@ -94,31 +94,6 @@ jobs:
                 "slotSetting": false
               },
               {
-                "name" : "TOKEN_SECRET",
-                "value": "${{ secrets.TOKEN_SECRET }}",
-                "slotSetting": false
-              },
-              {
-                "name" : "REFRESH_TOKEN_SECRET",
-                "value": "${{ secrets.REFRESH_TOKEN_SECRET }}",
-                "slotSetting": false
-              },
-              {
-                "name" : "LOGDNAKEY",
-                "value": "${{ secrets.LOGDNAKEY }}",
-                "slotSetting": false
-              },
-              {
-                "name" : "LOGENV",
-                "value": "${{ secrets.LOGENV }}",
-                "slotSetting": false
-              },
-              {
-                "name" : "LOGHOSTNAME",
-                "value": "${{ secrets.LOGHOSTNAME }}",
-                "slotSetting": false
-              },
-              {
                 "name" : "AUTH0_AUDIENCE",
                 "value": "${{ secrets.AUTH0_AUDIENCE }}",
                 "slotSetting": false
