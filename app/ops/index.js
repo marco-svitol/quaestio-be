@@ -256,7 +256,7 @@ module.exports = class opsService{
         return filteredData['$'];
       } else {
         logger.verbose(`${logMessage} for document num: ${docNum}`);
-        return '';
+        return ' -- ';
       }
     };
   
@@ -275,12 +275,12 @@ module.exports = class opsService{
     if (body['abstract']) {
       if (Array.isArray(body['abstract'])) {
         const field = filterArrayLang(body['abstract'], lang);
-        docData.abstract = field['p'];
+        docData.abstract = field['p']['$'];
       } else {
         docData.abstract = processField(body['abstract']['p'], 'Abstract is missing');
       }
     } else {
-      docData.abstract = '';
+      docData.abstract = ' -- ';
       logger.verbose(`Abstract is missing for document num: ${docNum}`);
     }
   
