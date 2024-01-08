@@ -283,15 +283,32 @@ module.exports = class opsService{
       docData.abstract = ' -- ';
       logger.verbose(`Abstract is missing for document num: ${docNum}`);
     }
+    
+    if (
+      body['bibliographic-data']['parties'] &&
+      body['bibliographic-data']['parties']['applicants'] &&
+      body['bibliographic-data']['parties']['applicants']['applicant']
+    ) {
+      // Filter items based on the condition
+      docData.applicant = body['bibliographic-data']['parties']['applicants']['applicant']
+        .filter(applicant => applicant['@data-format'] === 'epodoc')
+        .map(applicant => applicant['applicant-name']['name']['$'])
+        .join(', ');
+    } else {
+      docData.applicant = '';
+      logger.verbose(`Applicant is missing for document num: ${docNum}`);
+    }
+
   
-    docData.applicant = processField(body['bibliographic-data']['parties']['applicants'], 'Applicant is missing');
-  
-    const inventors = body['bibliographic-data']['parties']['inventors'];
-    if (inventors) {
+    if (
+      body['bibliographic-data']['parties'] &&
+      body['bibliographic-data']['parties']['inventors'] &&
+      body['bibliographic-data']['parties']['inventors']['inventor']
+    ) {
+      const inventors = body['bibliographic-data']['parties']['inventors'];
       const filteredInventor = filterArrayLang(inventors['inventor']);
       const inventorLength = inventors['inventor'].length;
       docData.inventor = filteredInventor['inventor-name']['name']['$'];
-  
       if (inventorLength > 1) {
         docData.inventor += ` (+${inventorLength - 1})`;
       }
