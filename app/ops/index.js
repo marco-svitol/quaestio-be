@@ -289,6 +289,10 @@ module.exports = class opsService{
       body['bibliographic-data']['parties']['applicants'] &&
       body['bibliographic-data']['parties']['applicants']['applicant']
     ) {
+      // Ensure that 'applicant' is an array
+      docData.applicant = Array.isArray(body['bibliographic-data']['parties']['applicants']['applicant'])
+      ? body['bibliographic-data']['parties']['applicants']['applicant']
+      : [body['bibliographic-data']['parties']['applicants']['applicant']];
       // Filter items based on the condition
       docData.applicant = body['bibliographic-data']['parties']['applicants']['applicant']
         .filter(applicant => applicant['@data-format'] === 'epodoc')
