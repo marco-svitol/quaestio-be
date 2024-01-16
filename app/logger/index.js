@@ -82,12 +82,15 @@ module.exports=logger;
 
 module.exports.srvconsoledir = function (request, start=1, err = 0){ //internal: log service call info to console
   let srvname = request.path;
+  const ignoreServiceNames = ['/health', '/metrics'];
+
+  //do not print health service to prevent logs flood! 
+  if (ignoreServiceNames.includes(srvname)) {
+      return;
+  }
+
   if (err==0){
 		if (start){
-			if (srvname == '/health'  ||
-          srvname == '/metrics' || 
-          srvname == '/login'
-          ){return;}  //do not print health service to prevent logs flood! 
 			let msg;
       if (request.method === 'POST' || request.method === 'PATCH'){
         let params = JSON.stringify(request.body)
