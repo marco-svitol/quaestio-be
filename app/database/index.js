@@ -200,7 +200,7 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
   let whereClause = "";
   var dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
-  if (typeof queryParams.doc_num === "string" && queryParams.doc_num.trim() !== "") {
+  if (typeof queryParams.doc_num === "string" && queryParams.doc_num.trim() !== "" && queryParams.doc_num.trim().toLowerCase() !== "undefined") {
 		dbRequest.input('doc_num', sql.VarChar(50), queryParams.doc_num);
     whereClause = ` AND JSON_VALUE(docmetadata, '$.doc_num') = @doc_num`;
 	} else {
@@ -212,7 +212,10 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
 		}
 
 		if (queryParams.pdfrom) {
-			conditions.push( ` CONVERT(DATE, JSON_VALUE(docmetadata, '$.date'), 112) ${utils.validateDateBookmark(queryParams.pdfrom, queryParams.pdto)}`);
+			const queryDate = utils.validateDateBookmark(queryParams.pdfrom, queryParams.pdto);
+      if (queryDate){
+        conditions.push( ` CONVERT(DATE, JSON_VALUE(docmetadata, '$.date'), 112) ${queryDate}`);
+      }
 		}
 
 		if (conditions.length > 0) {
