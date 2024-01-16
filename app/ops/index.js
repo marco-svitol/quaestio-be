@@ -59,6 +59,7 @@ module.exports = class opsService{
         if (error.response && error.config) {
           const statuscode = error.response.status;
           const originalRequest = error.config;
+          logger.debug(`Axios: ${error.code} : ${error.response.data}`);
           if ((!authResponse.access_token || [400,401,403].includes(statuscode)) && !originalRequest._retry ){
             originalRequest._retry = true;
             await refreshToken();
@@ -132,7 +133,7 @@ module.exports = class opsService{
       const nextPageStart = pageEnd + 1;
       const nextPageEnd = pageEnd + 100;
 
-      if (nextPageStart <= patentServiceResponseParsed.opsResultsInfo.total_count) {
+      if (nextPageStart <= patentServiceResponseParsed.opsResultsInfo.total_count && nextPageStart <= global.config_data.app.maxOPSResults) {
         // Recursively call the function with the next page range
         return this.getAllDocumentsRecurse(strQuery, nextPageStart, nextPageEnd, allDocs, patentServiceResponseParsed.opsLights);
       }
@@ -175,8 +176,15 @@ module.exports = class opsService{
       const exchangeDocument = documents['ops:world-patent-data']['ops:biblio-search']['ops:search-result']?.['exchange-documents'];
       const filteredDocs = Array.isArray(exchangeDocument) ? exchangeDocument : [exchangeDocument];
       return filteredDocs.filter(
-        doc => doc['exchange-document']['@kind'][0] !== 'T' && doc['exchange-document']['@kind'][0] !== 'D'
-      );
+        doc => {
+          if(doc['exchange-document']['@kind']){
+            if(doc['exchange-document']['@kind'].length > 0){
+              return doc['exchange-document']['@kind'][0] !== 'T' && doc['exchange-document']['@kind'][0] !== 'D'
+            }
+          }
+          return false;
+        }
+      )
     };
   
     const parseOPSResultsInfo = (responseData) => {

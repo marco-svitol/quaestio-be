@@ -195,9 +195,32 @@ module.exports._getQuery = async function(field, id, uid){
   throw Error(`The query ${strQuery} returned no results.`);
 }
 
-module.exports._getbookmarks = async function(uid, next){
+module.exports._getbookmarks = async function(uid, queryParams, next){
+  let whereClause = "";
   var dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
+  if (typeof queryParams.doc_num === "string" && queryParams.doc_num.trim() !== "") {
+		dbRequest.input('doc_num', sql.VarChar(50), queryParams.doc_num);
+    whereClause = ` AND JSON_VALUE(docmetadata, '$.doc_num') = @doc_num`;
+	} else {
+    const conditions = [];
+
+		if (queryParams.bookmarkpa) {
+      dbRequest.input('applicant', sql.VarChar(50), queryParams.bookmarkpa);
+			conditions.push("JSON_VALUE(docmetadata, '$.applicant') = @applicant");
+		}
+
+		if (queryParams.pdfrom) {
+			conditions.push(utils.validateDate(req.query.pdfrom, req.query.pdto));
+		}
+
+		if (conditions.length > 0) {
+			whereClause = conditions.join(" AND ");
+		} 
+  }
+  
+  logger.debug(whereClause);
+
   var strQuery = `
   SELECT
   JSON_VALUE(docmetadata, '$.doc_num') AS doc_num,
@@ -215,7 +238,7 @@ module.exports._getbookmarks = async function(uid, next){
   
   FROM dochistory 
   WHERE
-  uid = @uid AND bookmark = 1
+  uid = @uid AND bookmark = 1 ${whereClause}
 `
 dbRequest.query(strQuery)
 .then(dbRequest => {
