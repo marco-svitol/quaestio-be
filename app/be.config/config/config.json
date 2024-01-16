@@ -11,9 +11,7 @@
             "cacheEnabled"  : 1,
             "cacheTTLHours" : 8,
             "serverPort"    : 80,
-            "logdnakey"     : "",
-            "loghostname"   : "",
-            "logenv"        : ""
+            "maxOPSResults" : 1000
         },
         "sqlConfigPool" : {
             "connectionLimit"   : 10,

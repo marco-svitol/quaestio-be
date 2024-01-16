@@ -22,6 +22,8 @@ finalConfig.sqlConfigPool.database = process.env.SQLCONFIG_DBNAME;
 finalConfig.app.loglevel = process.env.LOGLEVEL || finalConfig.app.loglevel;
 finalConfig.app.serverPort = process.env.SERVERPORT || finalConfig.app.serverPort;
 
+finalConfig.app.maxOPSResults = process.env.MAXOPSRESULTS || finalConfig.app.maxOPSResults;
+
 if (!finalConfig.app.opsBaseUrl) { console.log("Fatal error: OPSBASEURL missing"); };
 if (!finalConfig.app.opsClientID) { console.log("Fatal error: OPSCLIENTID missing"); };
 if (!finalConfig.app.opsClientSecret) { console.log("Fatal error: OPSCLIENTSECRET missing"); };
