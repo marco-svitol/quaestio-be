@@ -168,10 +168,13 @@ exports.parseOPSQuota = function(headers){
 exports.searchbookmark = async(req, res) => {
     db._getbookmarks(req.auth.payload.sub, req.query, (err, body) => {
         if (!err){
-			const results = body.map(doc => {
-				doc.read_history = status[doc.read_history];
-				return doc;
-			})
+			let results = '';
+			if (body){
+				results = body.map(doc => {
+					doc.read_history = status[doc.read_history];
+					return doc;
+				})
+			}
             res.status(200).json(results);
         }else{
 			logger.error(`searchbookmark: ${err}`)
