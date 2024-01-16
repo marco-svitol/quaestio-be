@@ -25,6 +25,18 @@ module.exports.validateDate = function validateDate(fromField, toField){
 	return null
 }
 
+module.exports.validateDateBookmark = function validateDate(fromField, toField){
+	var date_regex = /^(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|1\d|2\d|3[01])$/;
+	fromFieldValid = date_regex.test(fromField);
+	toFieldValid = date_regex.test(toField);
+	if (fromFieldValid && !toFieldValid){toField = fromField}
+	else if (!fromFieldValid && toFieldValid){fromField = toField};
+	if (fromFieldValid || toFieldValid){
+		return ` BETWEEN CONVERT(DATE, CONVERT(VARCHAR(8), ${fromField}), 112) AND CONVERT(DATE, CONVERT(VARCHAR(8), ${toField}), 112);`
+	}
+	return null
+}
+
 module.exports.tokenExpirationDate = function tokenExpirationDate(exp){
 	const currentTimestamp = Math.floor(Date.now() / 1000); // Convert to seconds
 	const expirationTimestamp = exp;

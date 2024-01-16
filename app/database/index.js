@@ -1,6 +1,7 @@
 const logger=require('../logger'); 
 const sqlConfigPool = global.config_data.sqlConfigPool;
 const sql = require('mssql');
+const utils=require('../utils');
 
 const getuserProfile = `
 SELECT
@@ -211,45 +212,46 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
 		}
 
 		if (queryParams.pdfrom) {
-			conditions.push(utils.validateDate(req.query.pdfrom, req.query.pdto));
+			conditions.push( ` CONVERT(DATE, JSON_VALUE(docmetadata, '$.date'), 112) ${utils.validateDateBookmark(queryParams.pdfrom, queryParams.pdto)}`);
 		}
 
 		if (conditions.length > 0) {
-			whereClause = conditions.join(" AND ");
+			whereClause = "AND " + conditions.join(" AND ");
 		} 
   }
-  
-  logger.debug(whereClause);
 
   var strQuery = `
-  SELECT
-  JSON_VALUE(docmetadata, '$.doc_num') AS doc_num,
-  JSON_VALUE(docmetadata, '$.type') AS type,
-  JSON_VALUE(docmetadata, '$.familyid') AS familyid,
-  JSON_VALUE(docmetadata, '$.country') AS country,
-  JSON_VALUE(docmetadata, '$.invention_title') AS invention_title,
-  JSON_VALUE(docmetadata, '$.date') AS date,
-  JSON_VALUE(docmetadata, '$.abstract') AS abstract,
-  JSON_VALUE(docmetadata, '$.applicant') AS applicant,
-  JSON_VALUE(docmetadata, '$.inventor_name') AS inventor_name,
-  JSON_VALUE(docmetadata, '$.ops_link') AS ops_link,
-  status as read_history,
-  bookmark 
-  
-  FROM dochistory 
-  WHERE
-  uid = @uid AND bookmark = 1 ${whereClause}
+    SELECT
+    JSON_VALUE(docmetadata, '$.doc_num') AS doc_num,
+    JSON_VALUE(docmetadata, '$.type') AS type,
+    JSON_VALUE(docmetadata, '$.familyid') AS familyid,
+    JSON_VALUE(docmetadata, '$.country') AS country,
+    JSON_VALUE(docmetadata, '$.invention_title') AS invention_title,
+    JSON_VALUE(docmetadata, '$.date') AS date,
+    JSON_VALUE(docmetadata, '$.abstract') AS abstract,
+    JSON_VALUE(docmetadata, '$.applicant') AS applicant,
+    JSON_VALUE(docmetadata, '$.inventor_name') AS inventor_name,
+    JSON_VALUE(docmetadata, '$.ops_link') AS ops_link,
+    status as read_history,
+    bookmark 
+    
+    FROM dochistory 
+    WHERE
+    uid = @uid AND bookmark = 1 ${whereClause}
 `
-dbRequest.query(strQuery)
-.then(dbRequest => {
-  let rows = dbRequest.recordset;
-  if (rows.length > 0){
-      next(null, rows);
-  }else{
-    next(null,null);
-  }
-})
-.catch(err => {
-  next(err,null);
-})
+
+  logger.debug(strQuery);
+
+  dbRequest.query(strQuery)
+  .then(dbRequest => {
+    let rows = dbRequest.recordset;
+    if (rows.length > 0){
+        next(null, rows);
+    }else{
+      next(null,null);
+    }
+  })
+  .catch(err => {
+    next(err,null);
+  })
 }
