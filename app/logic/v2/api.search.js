@@ -168,7 +168,7 @@ exports.parseOPSQuota = function(headers){
 exports.searchbookmark = async(req, res) => {
     db._getbookmarks(req.auth.payload.sub, req.query, (err, body) => {
         if (!err){
-			let results = '';
+			let results = '{}';
 			if (body){
 				results = body.map(doc => {
 					doc.read_history = status[doc.read_history];
