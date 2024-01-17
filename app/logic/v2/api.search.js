@@ -8,8 +8,8 @@ const utils=require('../../utils');
 exports.search = async(req, res) => {
 	//validate params middleware??
 	reqQuery="";
-	if (typeof req.query.pn === "string" && req.query.pn.trim() !== "") {
-		reqQuery = `pn=${req.query.pn}`;
+	if (typeof req.query.doc_num === "string" && req.query.doc_num.trim() !== "") {
+		reqQuery = `pn=${req.query.doc_num}`;
 	} else {
 		const conditions = [];
 

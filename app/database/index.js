@@ -243,7 +243,7 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
     uid = @uid AND bookmark = 1 ${whereClause}
 `
 
-  logger.debug(strQuery);
+  logger.verbose(strQuery);
 
   dbRequest.query(strQuery)
   .then(dbRequest => {
