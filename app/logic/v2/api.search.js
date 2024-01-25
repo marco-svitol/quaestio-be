@@ -18,7 +18,7 @@ exports.search = async(req, res) => {
 		}
 
 		if (req.query.tecarea) {
-			conditions.push(await getQueryFromId("tecareas", req.query.tecarea, req.auth.payload.sub));
+			conditions.push(`(${await getQueryFromId("tecareas", req.query.tecarea, req.auth.payload.sub)})`);
 		}
 
 		if (req.query.pdfrom) {
