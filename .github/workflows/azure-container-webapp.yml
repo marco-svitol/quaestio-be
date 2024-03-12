@@ -37,6 +37,7 @@ on:
       - ".gitignore"
       - "README.md"
       - "LICENSE"
+      - "ISSUE_TEMPLATE/*"
 
   workflow_dispatch:
 
