@@ -4,11 +4,11 @@ const dotenv = require('dotenv');
 
 // module variables 
 const config = require('./config/config.json');
-const defaultConfig = config.development;
+const defaultConfig = config.development; //development is the default config...  
 const environment = process.env.NODE_ENV || 'production';
-const environmentConfig = config[environment];
-const finalConfig = _.merge(defaultConfig, environmentConfig);
-dotenv.config();
+const environmentConfig = config[environment]; //...and is overriden by the running one (production)
+const finalConfig = _.merge(defaultConfig, environmentConfig); //this is the finalconfig
+dotenv.config(); //repo config is overriden by env vars
 finalConfig.app.opsBaseUrl = process.env.OPSBASEURL;
 finalConfig.app.opsClientID = process.env.OPSCLIENTID;
 finalConfig.app.opsClientSecret = process.env.OPSCLIENTSECRET;

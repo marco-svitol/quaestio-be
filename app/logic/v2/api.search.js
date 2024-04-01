@@ -12,13 +12,12 @@ exports.search = async(req, res) => {
 		reqQuery = `pn=${req.query.doc_num}`;
 	} else {
 		const conditions = [];
-
 		if (req.query.pa) {
-			conditions.push(await getQueryFromId("applicants", req.query.pa, req.auth.payload.sub));
+			conditions.push(await getQueryFromId("applicants", req.query.pa, req.auth.userInfo.pattodate_org_id));
 		}
 
 		if (req.query.tecarea) {
-			conditions.push(`(${await getQueryFromId("tecareas", req.query.tecarea, req.auth.payload.sub)})`);
+			conditions.push(`(${await getQueryFromId("tecareas", req.query.tecarea, req.auth.userInfo.pattodate_org_id)})`);
 		}
 
 		if (req.query.pdfrom) {
@@ -64,23 +63,29 @@ exports.search = async(req, res) => {
 	})
 }
 
-async function getQueryFromId (field, id, uid){
+async function getQueryFromId (field, id, org_id){
 	try{
-		return await db._getQuery(field, id, uid);	}
+		return await db._getQuery(field, id, org_id);	}
 	catch(err){
-		logger.error(`getQueryFromId: Query not found with field=${field} id=${id} uid=${uid}. ${err.message}`);
+		logger.error(`getQueryFromId: Query not found with field=${field} id=${id} org_id=${org_id}. ${err.message}`);
 		return '';
 	}
 }
 
 exports.userprofile = async(req, res) => {
 	//validate params middleware??
-	db._userprofile(req.auth.payload.sub, (err, qresult) => {
+	db._userprofile(req.auth.payload.sub, req.auth.userInfo.pattodate_org_id, (err, qresult) => {
 		if(err){
 			logger.error(`userprofile: ${qresult.message}: ${err}`);
 			res.status(500).json({message: `userprofile: ${msgServerError}`});
 		}else{
-			res.status(200).json(qresult.userprofile);
+			if (qresult.userprofile.length > 0){
+				qresult.userprofile[0].userinfo.displayname = req.auth.userInfo.name
+				res.status(200).json(qresult.userprofile);
+			}else{
+				logger.error(`userprofile: profile not found`);
+				res.status(500).json({message: `userprofile: profile not found`})
+			}
 		}
 	})
 }

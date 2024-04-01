@@ -5,7 +5,6 @@ const utils=require('../utils');
 
 const getuserProfile = `
 SELECT
-displayname AS "userinfo.displayname",
 logopath AS "userinfo.logopath",
 JSON_QUERY(
     (
@@ -25,12 +24,10 @@ JSON_QUERY(
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
     )
 ) AS searchvalues
-FROM [usersprofile]
-WHERE uid = @uid
+FROM [orgsprofile]
+WHERE org_id = @org_id
 FOR JSON PATH;
 `
-
-const guestLogo = 'https://quaestiosa.blob.core.windows.net/quaestio/logo_default.jpg'
 
 const pool = new sql.ConnectionPool(sqlConfigPool);
 const poolConnect = pool.connect()
@@ -48,9 +45,10 @@ module.exports.poolrequest = async function(){
 	return pool.request();
 }
 
-module.exports._userprofile = async function(uid, next){
+module.exports._userprofile = async function(uid, org_id, next){
   var dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
+  dbRequest.input('org_id', sql.Int, org_id);
   var strQuery = `
   DECLARE @USER_EXISTS INT;
 
@@ -64,8 +62,8 @@ module.exports._userprofile = async function(uid, next){
   END
   ELSE
   BEGIN
-    INSERT INTO usersprofile (uid, searchValues, logopath, displayname)
-    SELECT @uid, searchvalues, '${guestLogo}', 'guest'
+    INSERT INTO usersprofile (uid, userpreferences)
+    SELECT @uid, userpreferences
     FROM usersprofile
     WHERE uid = 'guest';
   END
@@ -179,13 +177,13 @@ module.exports._gethistory = async function(uid, next){
     })
 }
 
-module.exports._getQuery = async function(field, id, uid){
+module.exports._getQuery = async function(field, id, org_id){
   var dbRequest = await this.poolrequest();
   dbRequest.input('id', sql.Int, id);
-  dbRequest.input('uid', sql.VarChar(50), uid);
+  dbRequest.input('org_id', sql.Int, org_id);
   var strQuery = `
   SELECT JSON_VALUE(applicant.value, '$.query') AS query 
-  FROM (SELECT searchvalues FROM usersprofile WHERE uid = @uid) as applicants
+  FROM (SELECT searchvalues FROM orgsprofile WHERE org_id = @org_id) as applicants
   CROSS APPLY OPENJSON(searchvalues, '$.${field}') AS applicant
   WHERE JSON_VALUE(applicant.value, '$.id') = @id;
 `
