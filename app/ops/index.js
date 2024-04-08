@@ -148,7 +148,8 @@ module.exports = class opsService{
   //  aggregate docs with same family and pick the oldest
   //  if the oldest is a "weird" language introduce language priorities:  EP, US, GB, WO, FR, DE, IT and choose another one
   getFamilyOldests(opsPublications) {
-    const countryPriority = ['EP', 'WO', 'US', 'GB', 'DE', 'FR', 'IT'];
+    const countryPriority = global.config_data.app.countryPrio;
+    const overridePubPriorityDate = global.config_data.app.defPubPrioCrit === "country" ? true : false;
 
     const families = {};
 
@@ -167,37 +168,44 @@ module.exports = class opsService{
       const elementCountryPriority = countryPriority.indexOf(element['country']);
       const elementIsInCountryPriority = elementCountryPriority >= 0 ? true : false;
       
-      // Element is in language priority and promoted element was not: a non "weird" language wins
+      // Element is in language priority and promoted element was not a listed language always wins
       if (elementIsInCountryPriority && !promotedIsInCountryPriority){
         families[familyId] = element;
         return;
       }
-      // Both are non-weird languages but element has higher language priority than promoted
-      //if ((elementIsInCountryPriority && promotedIsInCountryPriority) && (elementCountryPriority > promotedCountryPriority)){
-      //  families[familyId] = element;
-      //  return;
-      //}
-      // Both are non weird languages and have the same language priority: the older wins
-      // if ((elementIsInCountryPriority && promotedIsInCountryPriority) && (elementCountryPriority === promotedCountryPriority)){
-      //   if (elementDate < promotedFamilyElement['date']){
-      //     families[familyId] = element;
-      //     return;
-      //   }
-      // }
-      // Both are non weird languages: older wins
-      if ((elementIsInCountryPriority && promotedIsInCountryPriority)){
-        if (elementDate < promotedFamilyElement['date']){
-          families[familyId] = element;
-          return;
-        }
-      }
-      // Both are weird languages, older wins
+      // Both are not listed languages, older wins
       if ((!elementIsInCountryPriority && !promotedIsInCountryPriority) && (elementCountryPriority === promotedCountryPriority)){
         if (elementDate < promotedFamilyElement['date']){
           families[familyId] = element;
           return;
         }
       }
+      // Both are listed languages and have the same language priority: the older wins
+      if ((elementIsInCountryPriority && promotedIsInCountryPriority) && (elementCountryPriority === promotedCountryPriority)){
+        if (elementDate < promotedFamilyElement['date']){
+          families[familyId] = element;
+          return;
+        }
+      }
+
+      // Both are listed languages and the overridePubPriorityDate is set to True
+      // then compare the priorities and ignore the date
+      if ((elementIsInCountryPriority && promotedIsInCountryPriority) && overridePubPriorityDate){
+        if (elementCountryPriority > promotedCountryPriority){
+          families[familyId] = element;
+          return;
+        }
+      }
+
+      // Both are not listed languages and the overridePubPriorityDate is set to False
+      //  then older always wins regardless of the date 
+      if ((elementIsInCountryPriority && promotedIsInCountryPriority) && !overridePubPriorityDate){
+        if (elementDate < promotedFamilyElement['date']){
+          families[familyId] = element;
+          return;
+        }
+      }
+
     });
 
     const arrayFamilies = Object.values(families);

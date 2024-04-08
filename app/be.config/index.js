@@ -24,6 +24,9 @@ finalConfig.app.serverPort = process.env.SERVERPORT || finalConfig.app.serverPor
 
 finalConfig.app.maxOPSResults = process.env.MAXOPSRESULTS || finalConfig.app.maxOPSResults;
 
+finalConfig.app.countryPrio = process.env.COUNTRYPRIO || finalConfig.app.countryPrio;
+finalConfig.app.defPubPrioCrit = process.env.DEFPUBPRIOCRIT || finalConfig.app.defPubPrioCrit;
+
 if (!finalConfig.app.opsBaseUrl) { console.log("Fatal error: OPSBASEURL missing"); };
 if (!finalConfig.app.opsClientID) { console.log("Fatal error: OPSCLIENTID missing"); };
 if (!finalConfig.app.opsClientSecret) { console.log("Fatal error: OPSCLIENTSECRET missing"); };

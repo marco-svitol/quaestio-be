@@ -12,7 +12,9 @@
             "cacheTTLHours": 8,
             "serverPort": 80,
             "maxOPSResults": 1000,
-            "userInfoCacheTTLSeconds": 600
+            "userInfoCacheTTLSeconds": 600,
+            "countryPrio": ["EP", "WO", "US", "GB", "DE", "FR", "IT"],
+            "defPubPrioCrit": "date"
         },
         "sqlConfigPool": {
             "connectionLimit": 10,
