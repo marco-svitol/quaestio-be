@@ -44,11 +44,12 @@ exports.search = async(req, res) => {
 							const f = history.find(hdoc =>  hdoc.docid === doc.doc_num);
 							doc.read_history = f?status[f.status]:status[0];
 							doc.bookmark = f?f.bookmark:false;
+							doc.notes = f?f.notes:"";
 						} 
 						return doc;
 					})
 					body = histBody.sort((a,b) => b.date - a.date);
-					const userinfo = headers[0]?this.parseOPSQuota(headers[0]):this.parseOPSQuota(headers);
+					const userinfo = headers[0]?utils.parseOPSQuota(headers[0]):utils.parseOPSQuota(headers);
 					body.push({userinfo: userinfo});
 					res.status(200).send(body);
 				}else{
@@ -72,24 +73,6 @@ async function getQueryFromId (field, id, org_id){
 	}
 }
 
-exports.userprofile = async(req, res) => {
-	//validate params middleware??
-	db._userprofile(req.auth.payload.sub, req.auth.userInfo.pattodate_org_id, (err, qresult) => {
-		if(err){
-			logger.error(`userprofile: ${qresult.message}: ${err}`);
-			res.status(500).json({message: `userprofile: ${msgServerError}`});
-		}else{
-			if (qresult.userprofile.length > 0){
-				qresult.userprofile[0].userinfo.displayname = req.auth.userInfo.name
-				res.status(200).json(qresult.userprofile);
-			}else{
-				logger.error(`userprofile: profile not found`);
-				res.status(500).json({message: `userprofile: profile not found`})
-			}
-		}
-	})
-}
-
 exports.opendoc = async(req, res) => {
 	//update doc history and return OPS Link
 	db._updatehistory(req.auth.payload.sub, req.query.doc_num, status.indexOf("viewed"), (err) => {
@@ -101,7 +84,7 @@ exports.opendoc = async(req, res) => {
 			const opslink = opsQuaestio.getLinkFromDocId(req.query.doc_num);
 			opsQuaestio.getImagesLinksFromDocId((req.query.doc_num), (imagesLinks) => {
 				if (imagesLinks){
-					const userinfo = imagesLinks.headers[0]?this.parseOPSQuota(imagesLinks.headers[0]):this.parseOPSQuota(imagesLinks.headers);
+					const userinfo = imagesLinks.headers[0]?utils.parseOPSQuota(imagesLinks.headers[0]):utils.parseOPSQuota(imagesLinks.headers);
 					res.status(200).send({ops_link: opslink, images_links: imagesLinks.imagesLinks, userinfo: userinfo});
 				}else{
 					res.status(200).send({ops_link: opslink, images_links: "", userinfo: ""});
@@ -111,40 +94,6 @@ exports.opendoc = async(req, res) => {
 		}
 	})
 }
-
-exports.bookmark = async (req, res) => {
-	const bookmark = parseInt(req.query.bookmark, 10) || 0;
-	let docmetadata = '';
-  
-	if (bookmark == 1) {
-	  try {
-		docmetadata = await new Promise((resolve, reject) => {
-		  opsQuaestio.publishedDataSearch(`pn=${req.query.doc_num}`, (err, body) => {
-			if (!err) {
-			  resolve(JSON.stringify(body[0]));
-			} else {
-			  logger.error(`bookmark: ${msgServerError}: ${err}`);
-			  res.status(500).json({ message: `bookmark: ${msgServerError}` });
-			  reject(err);
-			}
-		  });
-		});
-	  } catch (error) {
-		logger.error(`bookmark: ${msgServerError}: ${err}`);
-		return res.status(500).json({ message: `bookmark: ${msgServerError}` });
-	  }
-	}
-
-	db._updatebookmark(req.auth.payload.sub, req.query.doc_num, bookmark, status.indexOf("new"), docmetadata, (err) => {
-	  if (err) {
-		logger.error(`bookmark: ${msgServerError}: ${err}`);
-		res.status(500).json({ message: `bookmark: ${msgServerError}` });
-	  } else {
-		const booleanResult = !!bookmark;
-		res.status(200).json({ bookmark: booleanResult });
-	  }
-	});
-  };
 
 exports.firstpageClipping = async(req, res) => {
 	const fpcImage = req.query.fpcImage;
@@ -161,29 +110,3 @@ exports.firstpageClipping = async(req, res) => {
 		}
 	})
 } 
-
-exports.parseOPSQuota = function(headers){
-	let throttling = headers["x-throttling-control"].replace(',','').replace('(','').replace(')','').split(' ');
-	throttling = throttling.map(x => {return x.split('=')});
-	let quotas = ({"throttling-control": throttling, "individualquotaperhour-used": headers["x-individualquotaperhour-used"], "registeredquotaperweek-used": headers["x-registeredquotaperweek-used"]});
-	return quotas;
-}
-
-
-exports.searchbookmark = async(req, res) => {
-    db._getbookmarks(req.auth.payload.sub, req.query, (err, body) => {
-        if (!err){
-			let results = '{}';
-			if (body){
-				results = body.map(doc => {
-					doc.read_history = status[doc.read_history];
-					return doc;
-				})
-			}
-            res.status(200).json(results);
-        }else{
-			logger.error(`searchbookmark: ${err}`)
-			res.status(500).json({message: `searchbookmark: ${msgServerError}`});
-        }
-    })
-}

@@ -60,7 +60,14 @@ module.exports.tokenExpirationDate = function tokenExpirationDate(exp){
 			seconds: 0,
 		};
 	}
-  }
+}
+
+module.exports.parseOPSQuota = function(headers){
+	let throttling = headers["x-throttling-control"].replace(',','').replace('(','').replace(')','').split(' ');
+	throttling = throttling.map(x => {return x.split('=')});
+	let quotas = ({"throttling-control": throttling, "individualquotaperhour-used": headers["x-individualquotaperhour-used"], "registeredquotaperweek-used": headers["x-registeredquotaperweek-used"]});
+	return quotas;
+}
 
 //deprecated
 function setRange(beginRange, endRange){

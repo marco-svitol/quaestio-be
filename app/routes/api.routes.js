@@ -6,6 +6,9 @@ module.exports = myapp => {
 
   const apitest = require("../logic/v2/api.test.js");
   const apisearchv2 = require("../logic/v2/api.search.js");
+  const apiuserprofile = require("../logic/v2/api.userprofile.js");
+  const apibookmark = require("../logic/v2/api.bookmark.js");
+  const apinotes = require("../logic/v2/api.notes.js");
   const apihealth = require("../logic/health.js");
 
   const { errorHandler } = require("../identity/error.middleware");
@@ -50,11 +53,12 @@ module.exports = myapp => {
   //protected
   routerapp.get("/v2/opstest", apitest.opstest);
   routerapp.get("/v2/opendoc", apisearchv2.opendoc);
-  routerapp.patch("/v2/bookmark", apisearchv2.bookmark);
+  routerapp.patch("/v2/bookmark", apibookmark.bookmark);
   routerapp.get("/v2/firstpageClipping", apisearchv2.firstpageClipping);
   routerapp.get("/v2/search", apisearchv2.search);
-  routerapp.get("/v2/userprofile", apisearchv2.userprofile);
-  routerapp.get("/v2/searchbookmark", apisearchv2.searchbookmark);
+  routerapp.get("/v2/userprofile", apiuserprofile.userprofile);
+  routerapp.get("/v2/searchbookmark", apibookmark.searchbookmark);
+  routerapp.patch("/v2/notes", apinotes.notes);
 
 
   myapp.use('/api', routerapp);
