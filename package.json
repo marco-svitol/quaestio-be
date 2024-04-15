@@ -28,6 +28,7 @@
     "memory-cache": "^0.2.0",
     "moment-timezone": "^0.5.34",
     "mssql": "^9.1.1",
+    "node-cache": "^5.1.2",
     "nodemon": "^2.0.15",
     "perfy": "^1.1.5",
     "random-quotes": "^1.3.0",

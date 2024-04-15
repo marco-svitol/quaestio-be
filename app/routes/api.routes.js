@@ -8,13 +8,21 @@ module.exports = myapp => {
   const apisearchv2 = require("../logic/v2/api.search.js");
   const apihealth = require("../logic/health.js");
 
-  const { errorHandler } = require("../middleware/error.middleware");
-  const { notFoundHandler } = require("../middleware/not-found.middleware");
+  const { errorHandler } = require("../identity/error.middleware");
+  const { notFoundHandler } = require("../identity/not-found.middleware");
 
-  const { validateAccessToken } = require("../middleware/auth0.middleware.js");
+  const { validateAccessTokenMiddleWare, getIdentityInfoMiddleware } = require("../identity/auth0.middleware.js");
 
-  validateAccessToken.unless = unless;
-  routerapp.use(validateAccessToken.unless({
+  validateAccessTokenMiddleWare.unless = unless;
+  routerapp.use(validateAccessTokenMiddleWare.unless({
+    path: [
+      '/api/v2/test',
+      '/api/v2/cachereset',
+    ]
+  }));
+
+  getIdentityInfoMiddleware.unless = unless;
+  routerapp.use(getIdentityInfoMiddleware.unless({
     path: [
       '/api/v2/test',
       '/api/v2/cachereset',

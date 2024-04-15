@@ -148,27 +148,68 @@ module.exports = class opsService{
   //  aggregate docs with same family and pick the oldest
   //  if the oldest is a "weird" language introduce language priorities:  EP, US, GB, WO, FR, DE, IT and choose another one
   getFamilyOldests(opsPublications) {
-    const countryPriority = ['EP', 'WO', 'US', 'GB', 'DE', 'FR', 'IT'];
+    const countryPriority = global.config_data.app.countryPrio;
+    const overridePubPriorityDate = global.config_data.app.defPubPrioCrit === "country" ? true : false;
 
-    const familyGroups = {};
+    const families = {};
 
     opsPublications.forEach(element => {
-        const family = element["familyid"];
-        const elementDate = element['date'];
-        const familyElement = familyGroups[family];
+      const familyId = element["familyid"];
+      const elementDate = element['date'];
+      const promotedFamilyElement = families[familyId];
+      // if no promoted element exists yet, add it
+      if (!promotedFamilyElement){
+        families[familyId] = element;
+        return;
+      }
 
-        if (
-            !familyElement ||
-            countryPriority.indexOf(familyElement['country']) < 0 ||
-            countryPriority.indexOf(element['country']) < countryPriority.indexOf(familyElement['country']) ||
-            (countryPriority.indexOf(element['country']) === countryPriority.indexOf(familyElement['country']) && elementDate < familyElement['date'])
-        ) {
-            familyGroups[family] = element;
+      const promotedCountryPriority = countryPriority.indexOf(promotedFamilyElement['country']);
+      const promotedIsInCountryPriority = promotedCountryPriority >= 0 ? true : false;
+      const elementCountryPriority = countryPriority.indexOf(element['country']);
+      const elementIsInCountryPriority = elementCountryPriority >= 0 ? true : false;
+      
+      // Element is in language priority and promoted element was not a listed language always wins
+      if (elementIsInCountryPriority && !promotedIsInCountryPriority){
+        families[familyId] = element;
+        return;
+      }
+      // Both are not listed languages, older wins
+      if ((!elementIsInCountryPriority && !promotedIsInCountryPriority) && (elementCountryPriority === promotedCountryPriority)){
+        if (elementDate < promotedFamilyElement['date']){
+          families[familyId] = element;
+          return;
         }
+      }
+      // Both are listed languages and have the same language priority: the older wins
+      if ((elementIsInCountryPriority && promotedIsInCountryPriority) && (elementCountryPriority === promotedCountryPriority)){
+        if (elementDate < promotedFamilyElement['date']){
+          families[familyId] = element;
+          return;
+        }
+      }
+
+      // Both are listed languages and the overridePubPriorityDate is set to True
+      // then compare the priorities and ignore the date
+      if ((elementIsInCountryPriority && promotedIsInCountryPriority) && overridePubPriorityDate){
+        if (elementCountryPriority > promotedCountryPriority){
+          families[familyId] = element;
+          return;
+        }
+      }
+
+      // Both are not listed languages and the overridePubPriorityDate is set to False
+      //  then older always wins regardless of the date 
+      if ((elementIsInCountryPriority && promotedIsInCountryPriority) && !overridePubPriorityDate){
+        if (elementDate < promotedFamilyElement['date']){
+          families[familyId] = element;
+          return;
+        }
+      }
+
     });
 
-    const arrayFamilyGroups = Object.values(familyGroups);
-    return arrayFamilyGroups;
+    const arrayFamilies = Object.values(families);
+    return arrayFamilies;
   }
 
   parsePatentServiceResponse(response) {
