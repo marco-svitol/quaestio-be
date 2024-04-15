@@ -46,10 +46,10 @@ module.exports.poolrequest = async function(){
 }
 
 module.exports._userprofile = async function(uid, org_id, next){
-  var dbRequest = await this.poolrequest();
+  const dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
   dbRequest.input('org_id', sql.Int, org_id);
-  var strQuery = `
+  const strQuery = `
   DECLARE @USER_EXISTS INT;
 
   SELECT @USER_EXISTS = COUNT(*)
@@ -87,9 +87,9 @@ module.exports._userprofile = async function(uid, org_id, next){
 }
 
 module.exports._createuserprofile = async function(uid, next){
-  var dbRequest = await this.poolrequest();
+  const dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
-  var strQuery = `
+  const strQuery = `
     INSERT INTO usersprofile (uid, searchValues, _name_)
     SELECT @uid, searchvalues, 'guest'
     FROM usersprofile
@@ -108,11 +108,11 @@ module.exports._createuserprofile = async function(uid, next){
 }
 
 module.exports._updatehistory = async function(uid, docid, status, next){
-  var dbRequest = await this.poolrequest();
+  const dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
   dbRequest.input('docid', sql.NVarChar, docid);
   dbRequest.input('status', sql.Int, status);
-  var strQuery = `
+  const strQuery = `
 IF EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)  
 BEGIN  
 	UPDATE dochistory   
@@ -133,13 +133,13 @@ END`
 }
 
 module.exports._updatebookmark = async function(uid, docid, bookmark, status, docmetadata = '', next){
-  var dbRequest = await this.poolrequest();
+  const dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
   dbRequest.input('docid', sql.NVarChar, docid);
   dbRequest.input('bookmark', sql.Bit, bookmark);
   dbRequest.input('status', sql.Int, status);
   dbRequest.input('docmetadata', sql.NVarChar, docmetadata);
-  var strQuery = `
+  const strQuery = `
 IF EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)  
 BEGIN
 	UPDATE dochistory   
@@ -159,10 +159,37 @@ END`
     })
 }
 
-module.exports._gethistory = async function(uid, next){
-  var dbRequest = await this.poolrequest();
+module.exports._updatenotes = async function(uid, docid, notes, status, next){
+  const dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
-  var strQuery = `SELECT docid, status, bookmark FROM dochistory WHERE uid = @uid`
+  dbRequest.input('docid', sql.NVarChar, docid);
+  dbRequest.input('status', sql.Int, status);
+  dbRequest.input('notes', sql.NVarChar, notes);
+  const strQuery = `
+IF EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)  
+  BEGIN
+    UPDATE dochistory   
+    SET notes = @notes
+    WHERE uid = @uid AND docid = @docid;  
+  END  
+  ELSE  
+  BEGIN  
+      INSERT INTO dochistory (uid, docid, status, bookmark, docmetadata, notes) VALUES (@uid, @docid, @status , 0, '', @notes)
+  END
+`
+  dbRequest.query(strQuery)
+    .then(() => {
+      next(null);
+    })
+    .catch(err => {
+      next(err);
+    })
+}
+
+module.exports._gethistory = async function(uid, next){
+  const dbRequest = await this.poolrequest();
+  dbRequest.input('uid', sql.VarChar(50), uid);
+  const strQuery = `SELECT docid, status, bookmark, notes FROM dochistory WHERE uid = @uid`
   dbRequest.query(strQuery)
     .then(dbRequest => {
       let rows = dbRequest.recordset;
@@ -178,10 +205,10 @@ module.exports._gethistory = async function(uid, next){
 }
 
 module.exports._getQuery = async function(field, id, org_id){
-  var dbRequest = await this.poolrequest();
+  const dbRequest = await this.poolrequest();
   dbRequest.input('id', sql.Int, id);
   dbRequest.input('org_id', sql.Int, org_id);
-  var strQuery = `
+  const strQuery = `
   SELECT JSON_VALUE(applicant.value, '$.query') AS query 
   FROM (SELECT searchvalues FROM orgsprofile WHERE org_id = @org_id) as applicants
   CROSS APPLY OPENJSON(searchvalues, '$.${field}') AS applicant
@@ -196,7 +223,7 @@ module.exports._getQuery = async function(field, id, org_id){
 
 module.exports._getbookmarks = async function(uid, queryParams, next){
   let whereClause = "";
-  var dbRequest = await this.poolrequest();
+  const dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
   if (typeof queryParams.doc_num === "string" && queryParams.doc_num.trim() !== "" && queryParams.doc_num.trim().toLowerCase() !== "undefined") {
 		dbRequest.input('doc_num', sql.VarChar(50), queryParams.doc_num);
@@ -221,7 +248,7 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
 		} 
   }
 
-  var strQuery = `
+  const strQuery = `
     SELECT
     JSON_VALUE(docmetadata, '$.doc_num') AS doc_num,
     JSON_VALUE(docmetadata, '$.type') AS type,
@@ -234,7 +261,8 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
     JSON_VALUE(docmetadata, '$.inventor_name') AS inventor_name,
     JSON_VALUE(docmetadata, '$.ops_link') AS ops_link,
     status as read_history,
-    bookmark 
+    bookmark,
+    notes
     
     FROM dochistory 
     WHERE
