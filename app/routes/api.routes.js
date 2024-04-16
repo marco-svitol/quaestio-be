@@ -54,6 +54,7 @@ module.exports = myapp => {
   routerapp.get("/v2/opstest", apitest.opstest);
   routerapp.get("/v2/opendoc", apisearchv2.opendoc);
   routerapp.patch("/v2/bookmark", apibookmark.bookmark);
+  routerapp.post("/v2/bmfolder", apibookmark.bmfolder);
   routerapp.get("/v2/firstpageClipping", apisearchv2.firstpageClipping);
   routerapp.get("/v2/search", apisearchv2.search);
   routerapp.get("/v2/userprofile", apiuserprofile.userprofile);

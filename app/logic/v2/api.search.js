@@ -45,6 +45,7 @@ exports.search = async(req, res) => {
 							doc.read_history = f?status[f.status]:status[0];
 							doc.bookmark = f?f.bookmark:false;
 							doc.notes = f?f.notes:"";
+							doc.bmfolderid = f?f.bmfolderid:"";
 						} 
 						return doc;
 					})

@@ -23,7 +23,16 @@ JSON_QUERY(
             ) AS tecareas
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
     )
-) AS searchvalues
+) AS searchvalues,
+(
+  SELECT
+      bmfolderid as id,
+      bmfoldername as name,
+      bmfolderscope as scope
+  FROM bookmarksfolders
+  WHERE uid = @uid
+  FOR JSON PATH
+) AS "bmfolders"
 FROM [orgsprofile]
 WHERE org_id = @org_id
 FOR JSON PATH;
@@ -121,7 +130,7 @@ BEGIN
 END  
 ELSE  
 BEGIN  
-	  INSERT INTO dochistory (uid, docid, status, bookmark) VALUES (@uid, @docid, @status, 0)
+	  INSERT INTO dochistory (uid, docid, status, bookmark, docmetadata, notes, bmfolderid) VALUES (@uid, @docid, @status, 0, '', '', null)
 END`
   dbRequest.query(strQuery)
     .then(() => {
@@ -132,23 +141,36 @@ END`
     })
 }
 
-module.exports._updatebookmark = async function(uid, docid, bookmark, status, docmetadata = '', next){
+module.exports._updatebookmark = async function(uid, docid, bmfolderid, status, docmetadata = '', next){
   const dbRequest = await this.poolrequest();
+  const bookmarkbit = bmfolderid ? 1 : 0;
   dbRequest.input('uid', sql.VarChar(50), uid);
   dbRequest.input('docid', sql.NVarChar, docid);
-  dbRequest.input('bookmark', sql.Bit, bookmark);
+  dbRequest.input('bookmark', sql.Bit, bookmarkbit);
+  dbRequest.input('bmfolderid',sql.VarChar(36), bmfolderid);
   dbRequest.input('status', sql.Int, status);
   dbRequest.input('docmetadata', sql.NVarChar, docmetadata);
   const strQuery = `
+DECLARE @actual_bmfolderid VARCHAR(36);
+
+IF EXISTS (SELECT 1 FROM bookmarksfolders WHERE bmfolderid = @bmfolderid)
+BEGIN
+    SET @actual_bmfolderid = @bmfolderid;
+END
+ELSE
+BEGIN
+    SET @actual_bmfolderid = NULL;
+END
+
 IF EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)  
 BEGIN
 	UPDATE dochistory   
-	SET bookmark = @bookmark, docmetadata = @docmetadata
-	WHERE uid = @uid AND docid = @docid;  
+	SET bookmark = @bookmark, docmetadata = @docmetadata, bmfolderid = @actual_bmfolderid
+	WHERE uid = @uid AND docid = @docid;
 END  
 ELSE  
 BEGIN  
-	  INSERT INTO dochistory (uid, docid, status, bookmark, docmetadata) VALUES (@uid, @docid, @status , 1, @docmetadata)
+	  INSERT INTO dochistory (uid, docid, status, bookmark, docmetadata, notes, bmfolderid) VALUES (@uid, @docid, @status , 1, @docmetadata, '', @actual_bmfolderid)
 END`
   dbRequest.query(strQuery)
     .then(() => {
@@ -174,7 +196,7 @@ IF EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)
   END  
   ELSE  
   BEGIN  
-      INSERT INTO dochistory (uid, docid, status, bookmark, docmetadata, notes) VALUES (@uid, @docid, @status , 0, '', @notes)
+      INSERT INTO dochistory (uid, docid, status, bookmark, docmetadata, notes, bmfolderid) VALUES (@uid, @docid, @status , 0, '', @notes, null)
   END
 `
   dbRequest.query(strQuery)
@@ -186,10 +208,50 @@ IF EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)
     })
 }
 
+module.exports._updatebmfolder = async function(uid, bmfolderid, bmfoldername, next){
+  const dbRequest = await this.poolrequest();
+  dbRequest.input('uid', sql.VarChar(50), uid);
+  dbRequest.input('bmfolderid', sql.VarChar(36), bmfolderid);
+  dbRequest.input('bmfoldername', sql.VarChar(256), bmfoldername);
+  const strQuery = `
+  DECLARE @ActionTaken NVARCHAR(50);
+
+  CREATE TABLE #ActionTaken (Action NVARCHAR(50));
+
+  MERGE INTO bookmarksfolders AS target
+  USING (SELECT @uid AS uid, @bmfolderid AS bmfolderid, @bmfoldername AS bmfoldername) AS source
+  ON target.uid = source.uid AND target.bmfolderid = source.bmfolderid
+  WHEN MATCHED AND source.bmfoldername = '' THEN
+      DELETE
+  WHEN MATCHED THEN
+      UPDATE SET bmfoldername = source.bmfoldername
+  WHEN NOT MATCHED AND (source.bmfolderid IS NULL OR source.bmfolderid = '') AND (source.bmfoldername IS NOT NULL AND source.bmfoldername <> '') THEN
+      INSERT (uid, bmfolderid, bmfoldername, bmfolderscope) VALUES (source.uid, NEWID(), source.bmfoldername, 'private')
+
+  OUTPUT 
+      $action AS Action
+  INTO #ActionTaken;
+
+ SELECT TOP 1 @ActionTaken = Action FROM #ActionTaken;
+
+ DROP TABLE #ActionTaken;
+ 
+ SELECT @ActionTaken AS ActionTaken;
+`
+  dbRequest.query(strQuery)
+    .then(result => {
+      const actionTaken = result.recordset[0].ActionTaken;
+      next(null, actionTaken);
+    })
+    .catch(err => {
+      next(err);
+    })
+}
+
 module.exports._gethistory = async function(uid, next){
   const dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
-  const strQuery = `SELECT docid, status, bookmark, notes FROM dochistory WHERE uid = @uid`
+  const strQuery = `SELECT docid, status, bookmark, notes, bmfolderid FROM dochistory WHERE uid = @uid`
   dbRequest.query(strQuery)
     .then(dbRequest => {
       let rows = dbRequest.recordset;
@@ -262,7 +324,8 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
     JSON_VALUE(docmetadata, '$.ops_link') AS ops_link,
     status as read_history,
     bookmark,
-    notes
+    notes,
+    bmfolderid
     
     FROM dochistory 
     WHERE
