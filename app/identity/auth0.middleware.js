@@ -5,8 +5,8 @@ const userInfoCache = new NodeCache({ stdTTL: global.config_data.app.userInfoCac
 const logger=require('../logger'); 
 
 const validateAccessTokenMiddleWare = auth({
-  issuerBaseURL: `https://${process.env.AUTH0_DOMAIN}`,
-  audience: process.env.AUTH0_AUDIENCE,
+  issuerBaseURL: `https://${global.config_data.identity.auth0Domain}`,
+  audience: global.config_data.identity.auth0Audience,
   tokenSigningAlg: 'RS256'
 });
 
@@ -17,7 +17,7 @@ module.exports = {
 
 module.exports.getIdentityInfoMiddleware = function(req, res, next) {
     const accessToken = req.headers.authorization;
-    const auth0Domain = process.env.AUTH0_DOMAIN;
+    const auth0Domain = global.config_data.identity.auth0Domain;
 
     const cacheKey = `userInfo_${accessToken}`;
     // Check if the user information exists in the cache

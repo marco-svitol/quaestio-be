@@ -9,6 +9,8 @@ module.exports = myapp => {
   const apiuserprofile = require("../logic/v2/api.userprofile.js");
   const apibookmark = require("../logic/v2/api.bookmark.js");
   const apinotes = require("../logic/v2/api.notes.js");
+  const apiidentity = require("../logic/v2/api.identity.js");
+
   const apihealth = require("../logic/health.js");
 
   const { errorHandler } = require("../identity/error.middleware");
@@ -60,7 +62,7 @@ module.exports = myapp => {
   routerapp.get("/v2/userprofile", apiuserprofile.userprofile);
   routerapp.get("/v2/searchbookmark", apibookmark.searchbookmark);
   routerapp.patch("/v2/notes", apinotes.notes);
-
+  routerapp.patch("/v2/changepassword", apiidentity.changepassword);
 
   myapp.use('/api', routerapp);
 
