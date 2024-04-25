@@ -4,14 +4,14 @@ const cacheMiddlewareReset = require('../../cache').cacheMiddlewareReset;
 
 exports.cacheReset = async (req, res) => {
 	cacheMiddlewareReset();
-	res.status(200).send("Cache cleared");
+	return res.status(200).send("Cache cleared");
 }
 
 exports.test = async (req, res) => { 
-	res.status(200).send({quote: randomQuote.default().body, author: randomQuote.default().author})
+	return res.status(200).send({quote: randomQuote.default().body, author: randomQuote.default().author})
 }
 
 exports.opstest = async (req, res) => { 
 	logger.debug(`OPSBASEURL:${global.config_data.app.opsBaseUrl} OPSCLIENTID:${global.config_data.app.opsClientID} OPSCLIENTSECRET:${global.config_data.app.opsClientSecret}`);
-	res.status(200).send("Check logs");
+	return res.status(200).send("Check logs");
 }

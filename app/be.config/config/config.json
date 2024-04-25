@@ -33,7 +33,8 @@
         "identity" : {
             "auth0OAuthTokenEndpoint" : "https://quaestio.eu.auth0.com/oauth/token",
             "auth0Domain" : "",
-            "auth0Audience" : "",
+            "auth0AppAudience" : "",
+            "auth0MgmtAudience" : "",
             "auth0SPAClientId" : "",
             "auth0SPASecret" : "",
             "auth0M2MClientId" : "",

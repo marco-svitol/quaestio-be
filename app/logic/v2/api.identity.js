@@ -5,22 +5,27 @@ const status = ["new", "listed", "viewed"];
 const identity = consts.identity;
 
 exports.changepassword = async ( req, res) => {
-    const oldpassword = req.query.oldpassword;
-    const newpassword = req.query.newpassword;
-    const username = req.auth.userInfo.username;
+  const oldpassword = req.query.oldpassword;
+  const newpassword = req.query.newpassword;
+  const username = req.auth.userInfo.email;
 
-    identity.verifyOldPassword(oldpassword, username);
-    
-    //verify old password against oauth/token
-    //if password not ok return old password wrong
+  //verify old password
+  const verifyPwResponse = await identity.verifyOldPassword(oldpassword, username);
 
-    //set new password
-    //if mgmnt token is expired or not set retrieve it (as we do for OPS) 
-    //   and restart from set new password
-    
-    //if Auth0 returns error 
-        // check if error can be forwarded to frontend as for password policy not met..
-        // and in case send it back to front end
-    
-    //send ok 200 to frontend
+  if (verifyPwResponse.status === 200){
+    consts.logger.debug(`changepassword: old password verification was succesfull`); 
+  }else{
+    consts.logger.debug(`changepassword: error ${verifyPwResponse.status}`);
+    return res.status(verifyPwResponse.status).send(verifyPwResponse.message?verifyPwResponse.message:msgServerError);
+  }
+  
+  //set new password
+  const setPwResponse = await identity.setPassword(newpassword, req.auth.payload.sub, req.headers.authorization);
+  if (setPwResponse.status === 200){
+    consts.logger.debug(`changepassword: new password was set succesfully`);
+    return res.status(200).send();
+  }else{
+    consts.logger.error(`changepassword: error ${setPwResponse.status} ${setPwResponse.message}`);
+    return res.status(setPwResponse.status).send(setPwResponse.message);
+  }  
 } 
