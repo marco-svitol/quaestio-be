@@ -1,7 +1,5 @@
 const consts=require('../../consts'); 
 const msgServerError = consts.msgServerError;
-const db=require('../../database');
-const status = ["new", "listed", "viewed"];
 const identity = consts.identity;
 
 exports.changepassword = async ( req, res) => {
