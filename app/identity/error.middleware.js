@@ -1,3 +1,5 @@
+const logger=require('../logger');
+
 const {
   InvalidTokenError,
   UnauthorizedError,
@@ -5,8 +7,8 @@ const {
 
 const errorHandler = (error, request, response, next) => {
   if (error instanceof InvalidTokenError) {
+    logger.error(`Auth0 error: ${error.code}: ${error.message}`)
     const message = "Bad credentials";
-
     response.status(error.status).json({ message });
 
     return;

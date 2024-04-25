@@ -7,14 +7,14 @@ exports.userprofile = async(req, res) => {
 	db._userprofile(req.auth.payload.sub, req.auth.userInfo.pattodate_org_id, (err, qresult) => {
 		if(err){
 			logger.error(`userprofile: ${qresult.message}: ${err}`);
-			res.status(500).json({message: `userprofile: ${msgServerError}`});
+			return res.status(500).json({message: `userprofile: ${msgServerError}`});
 		}else{
 			if (qresult.userprofile.length > 0){
 				qresult.userprofile[0].userinfo.displayname = req.auth.userInfo.name
-				res.status(200).json(qresult.userprofile);
+				return res.status(200).json(qresult.userprofile);
 			}else{
 				logger.error(`userprofile: profile not found`);
-				res.status(500).json({message: `userprofile: profile not found`})
+				return res.status(500).json({message: `userprofile: profile not found`})
 			}
 		}
 	})

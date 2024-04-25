@@ -18,6 +18,13 @@ finalConfig.sqlConfigPool.user = process.env.SQLCONFIG_DBUSER;
 finalConfig.sqlConfigPool.password = process.env.SQLCONFIG_DBPW;
 finalConfig.sqlConfigPool.server = process.env.SQLCONFIG_DBSERVER;
 finalConfig.sqlConfigPool.database = process.env.SQLCONFIG_DBNAME;
+finalConfig.identity.auth0Domain = process.env.AUTH0_DOMAIN
+finalConfig.identity.auth0AppAudience = process.env.AUTH0_APPAUDIENCE
+finalConfig.identity.auth0MgmtAudience = process.env.AUTH0_MGMTAUDIENCE
+finalConfig.identity.auth0SPAClientId = process.env.AUTH0_SPACLIENTID
+finalConfig.identity.auth0SPASecret = process.env.AUTH0_SPASECRET
+finalConfig.identity.auth0M2MClientId = process.env.AUTH0_M2MCLIENTID
+finalConfig.identity.auth0M2MSecret = process.env.AUTH0_M2MSECRET
 
 finalConfig.app.loglevel = process.env.LOGLEVEL || finalConfig.app.loglevel;
 finalConfig.app.serverPort = process.env.SERVERPORT || finalConfig.app.serverPort;

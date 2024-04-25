@@ -52,15 +52,15 @@ exports.search = async(req, res) => {
 					body = histBody.sort((a,b) => b.date - a.date);
 					const userinfo = headers[0]?utils.parseOPSQuota(headers[0]):utils.parseOPSQuota(headers);
 					body.push({userinfo: userinfo});
-					res.status(200).send(body);
+					return res.status(200).send(body);
 				}else{
 					logger.error(`publishedDataSearch:gethistory ${err.message}. Stack: ${err.stack}`);
-					res.status(500).json({message: `search: ${msgServerError}`});
+					return res.status(500).json({message: `search: ${msgServerError}`});
 				}
 			})
 		}else{
 			logger.error(`publishedDataSearch: ${err.message}. Stack: ${err.stack}`);
-			res.status(500).json({message: `search: ${msgServerError}`});
+			return res.status(500).json({message: `search: ${msgServerError}`});
 		}
 	})
 }
@@ -79,16 +79,16 @@ exports.opendoc = async(req, res) => {
 	db._updatehistory(req.auth.payload.sub, req.query.doc_num, status.indexOf("viewed"), (err) => {
 		if (err){
 			logger.error(`opendoc: ${msgServerError}: ${err}`);
-			res.status(500).json({message: `opendoc: ${msgServerError}`});
+			return res.status(500).json({message: `opendoc: ${msgServerError}`});
 		}else{
 			//retrieve link to firstpageClipping
 			const opslink = opsQuaestio.getLinkFromDocId(req.query.doc_num);
 			opsQuaestio.getImagesLinksFromDocId((req.query.doc_num), (imagesLinks) => {
 				if (imagesLinks){
 					const userinfo = imagesLinks.headers[0]?utils.parseOPSQuota(imagesLinks.headers[0]):utils.parseOPSQuota(imagesLinks.headers);
-					res.status(200).send({ops_link: opslink, images_links: imagesLinks.imagesLinks, userinfo: userinfo});
+					return res.status(200).send({ops_link: opslink, images_links: imagesLinks.imagesLinks, userinfo: userinfo});
 				}else{
-					res.status(200).send({ops_link: opslink, images_links: "", userinfo: ""});
+					return res.status(200).send({ops_link: opslink, images_links: "", userinfo: ""});
 				}
 				
 			})
@@ -107,7 +107,7 @@ exports.firstpageClipping = async(req, res) => {
 			body.pipe(res);
 		}else{
 			logger.error(`firstpageClipping: ${err}`)
-			res.status(500).json({message: `firstpageClipping: ${msgServerError}`});
+			return res.status(500).json({message: `firstpageClipping: ${msgServerError}`});
 		}
 	})
 } 

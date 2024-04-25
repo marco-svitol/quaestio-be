@@ -95,8 +95,13 @@ jobs:
                 "slotSetting": false
               },
               {
-                "name" : "AUTH0_AUDIENCE",
-                "value": "${{ secrets.AUTH0_AUDIENCE }}",
+                "name" : "AUTH0_APPAUDIENCE",
+                "value": "${{ secrets.AUTH0_APPAUDIENCE }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "AUTH0_MGMTAUDIENCE",
+                "value": "${{ secrets.AUTH0_MGMTAUDIENCE }}",
                 "slotSetting": false
               },
               {

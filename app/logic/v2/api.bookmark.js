@@ -32,10 +32,10 @@ exports.bookmark = async (req, res) => {
 	db._updatebookmark(req.auth.payload.sub, req.query.doc_num, bmfolderid, status.indexOf("new"), docmetadata, (err) => {
 		if (err) {
 		logger.error(`bookmark: ${msgServerError}: ${err}`);
-		res.status(500).json({ message: `bookmark: ${msgServerError}` });
+		return res.status(500).json({ message: `bookmark: ${msgServerError}` });
 		} else {
 		const booleanResult = !!bmfolderid;
-		res.status(200).json({ bookmark: booleanResult });
+		return res.status(200).json({ bookmark: booleanResult });
 		}
 	});
 };
@@ -50,10 +50,10 @@ exports.searchbookmark = async(req, res) => {
 					return doc;
 				})
 			}
-            res.status(200).json(results);
+            return res.status(200).json(results);
         }else{
 			logger.error(`searchbookmark: ${err}`)
-			res.status(500).json({message: `searchbookmark: ${msgServerError}`});
+			return res.status(500).json({message: `searchbookmark: ${msgServerError}`});
         }
     })
 }
@@ -65,9 +65,9 @@ exports.bmfolder = async (req, res) => {
     db._updatebmfolder(req.auth.payload.sub, bmfolderid, bmfoldername, (err, actionTaken) => {
         if (err) {
             logger.error(`notes: ${msgServerError}: ${err}`);
-            res.status(500).json({ message: `bmfolder: ${msgServerError}` });
+            return res.status(500).json({ message: `bmfolder: ${msgServerError}` });
         } else {
-            res.status(200).json({ action: actionTaken });
+            return res.status(200).json({ action: actionTaken });
         }
     });
 }
