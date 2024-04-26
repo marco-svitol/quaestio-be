@@ -3,37 +3,10 @@ const logger=require('../logger');
 const axios=require('axios');
 const msgServerError = require('../consts').msgServerError;
 
-const authAxiosInstance = axios.create();
-
-//Refresh token must be global, otherwise Axios interceptro cannot scope it.
-async function getToken(body, authorizationToken = null) {//{ = (next) => {
-  let response;
-  let authOptions = {
-    baseURL: `${global.config_data.identity.auth0OAuthTokenEndpoint}`,
-    headers: {
-      'Accept' : 'application/json',
-      'Content-Type' : 'application/json'
-    },
-  };
-  if (authorizationToken){
-    authOptions = {
-      ...authOptions,
-      'Authorization' : `Bearer ${authorizationToken}`
-    }
-  };
-  await authAxiosInstance.post("/", body, authOptions)
-    .then((r) => {
-      response = r;
-    })
-    .catch((err) => {
-      response = err;
-    })
-  return response
-}
-
 module.exports = class auth0MgmtAPI{
   constructor() {
-    this.auth0Axios = this.createCommonAxiosInstance();
+    this.auth0MgmtAxios = this.createCommonAxiosInstance();
+    this.auth0AppAxios = this.createAuth0AppAxiosInstance();
   }
 
   accessToken = null;
@@ -89,7 +62,7 @@ module.exports = class auth0MgmtAPI{
           logger.debug(`Auth0Axios: ${error.response.status} : ${error.response.data.message}`);
           if ([401,403].includes(statuscode) && !originalRequest._retry ){
             originalRequest._retry = true;
-            const response =  await getToken(this.bodyMgmtAPIRequest, this.accessToken);
+            const response =  await this.auth0AppAxios.post('/', this.bodyMgmtAPIRequest);
             this.mgmtAPIToken = response.data.access_token;
             logger.debug (`Successfully acquired management API token from Auth0. It will expire in approximately ${(response.data.expires_in/60).toFixed(2)} minutes.`);
             return newAxios(originalRequest); 
@@ -101,19 +74,44 @@ module.exports = class auth0MgmtAPI{
     return newAxios;
   }
 
+  createAuth0AppAxiosInstance(){
+    const newAxios = axios.create();
+
+    newAxios.interceptors.request.use(
+      async config => {
+        config.baseURL = `${global.config_data.identity.auth0OAuthTokenEndpoint}`,
+        config.headers = {
+            'Accept' : 'application/json',
+            'Content-Type' : 'application/json'
+        }
+        if (this.accessToken){
+          config.headers = {
+            ...config.headers,
+            'Authorization' : `Bearer ${this.accessToken}`
+          }
+        };
+        return config;
+      },
+      error => {
+        Promise.reject(error);
+      }
+    );
+    return newAxios;
+  }
+
   async verifyOldPassword(oldpassword, username){
     this.bodyApplicatiomAPIRequest.password = oldpassword;
     this.bodyApplicatiomAPIRequest.username = username;
-    const response =  await getToken(this.bodyApplicatiomAPIRequest);
-    if (isError(response)){
-      const errMsg = response?.response?.data?.error_description ? response.response.data.error_description : msgServerError
-      logger.error (`verifyOldPassword: error while retrieving token: ${response.response.status} ${errMsg}`);
-      return { status: response.response.status, message: errMsg }
-      }
-    else{
-      logger.debug(`verifyOldPassword: status is ${response.status}`)
-      return { status: response.status}
-    }
+    return this.auth0AppAxios.post('/', this.bodyApplicatiomAPIRequest)
+      .then(response => {
+        logger.debug(`verifyOldPassword: status is ${response.status}`)
+        return { status: response.status}
+      })
+      .catch(error => {
+        const errMsg = error?.response?.data?.error_description ? error.response.data.error_description : msgServerError
+        logger.error (`verifyOldPassword: error while retrieving token: ${error.response.status} ${errMsg}`);
+        return { status: error.response.status, message: errMsg }
+      });
   }
 
   async setPassword(newpassword, uid, accessToken){
@@ -124,12 +122,12 @@ module.exports = class auth0MgmtAPI{
       "connection": "Username-Password-Authentication"
     };
 
-    return this.auth0Axios.patch(patchAuth0PasswordURI, body)
+    return this.auth0MgmtAxios.patch(patchAuth0PasswordURI, body)
       .then(response => {
         return { status: response.status}
       })
       .catch(error => {
-        const errMsg = error?.response?.data?.message ? error.response.data.message : msgServerError
+        const errMsg = error.response?.data?.message ? error.response.data.message : error.response?.data?.error_description;
         logger.error (`setPassword: error while changing password token: ${error.response.status} ${errMsg}`);
         return { status: error.response.status, message: errMsg }
       });
