@@ -110,6 +110,26 @@ jobs:
                 "slotSetting": false
               },
               {
+                "name" : "AUTH0_SPACLIENTID",
+                "value": "${{ secrets.AUTH0_SPACLIENTID }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "AUTH0_SPASECRET",
+                "value": "${{ secrets.AUTH0_SPASECRET }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "AUTH0_M2MCLIENTID",
+                "value": "${{ secrets.AUTH0_M2MCLIENTID }}",
+                "slotSetting": false
+              },
+              {
+                "name" : "AUTH0_M2MSECRET",
+                "value": "${{ secrets.AUTH0_M2MSECRET }}",
+                "slotSetting": false
+              },
+              {
                 "name" : "LOGLEVEL",
                 "value": "${{ vars.LOGLEVEL }}",
                 "slotSetting": false
