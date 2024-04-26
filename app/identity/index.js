@@ -3,29 +3,25 @@ const logger=require('../logger');
 const axios=require('axios');
 const msgServerError = require('../consts').msgServerError;
 
-//Authentication Axios instance
-const authOptions = {
-  baseURL: `${global.config_data.identity.auth0OAuthTokenEndpoint}`,
-  headers: {
-    'Authorization': '',
-    'Accept' : 'application/json'
-  },
-};
-
-const authAxiosInstance = axios.create(authOptions);
-
-//Initialize authResponse object where access_token is stored
-let authResponse = {access_token: '', expires_in: 0};
+const authAxiosInstance = axios.create();
 
 //Refresh token must be global, otherwise Axios interceptro cannot scope it.
-async function getToken(body, authorizationToken = '') {//{ = (next) => {
+async function getToken(body, authorizationToken = null) {//{ = (next) => {
   let response;
-  const config = {
+  let authOptions = {
+    baseURL: `${global.config_data.identity.auth0OAuthTokenEndpoint}`,
     headers: {
-      'Authorization': authorizationToken
+      'Accept' : 'application/json',
+      'Content-Type' : 'application/json'
+    },
+  };
+  if (authorizationToken){
+    authOptions = {
+      ...authOptions,
+      'Authorization' : `Bearer ${authorizationToken}`
     }
   };
-  await authAxiosInstance.post("/", body, config)
+  await authAxiosInstance.post("/", body, authOptions)
     .then((r) => {
       response = r;
     })
