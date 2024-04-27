@@ -170,7 +170,7 @@ jobs:
 
       - name: Set build number for deploy
         id: build-number-for-deploy
-        run: echo "BUILD_NUMBER=env.BUILD_NUMBER" >> $GITHUB_OUTPUT
+        run: echo "BUILD_NUMBER=${{ env.BUILD_NUMBER }}" >> $GITHUB_OUTPUT
 
       - name: Read version from package.json
         id: version
