@@ -47,7 +47,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    outputs:
+      version: ${{ steps.version-for-deploy.outputs.VERSION }}
+      build_number: ${{ steps.build-number-for-deploy.outputs.BUILD_NUMBER}}
     steps:
       - uses: actions/checkout@v4
       - uses: azure/login@v2
@@ -168,7 +170,7 @@ jobs:
 
       - name: Set build number for deploy
         id: build-number-for-deploy
-        run: echo "build_number=env.BUILD_NUMBER" >> $GITHUB_OUTPUT
+        run: echo "BUILD_NUMBER=env.BUILD_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Read version from package.json
         id: version
@@ -176,7 +178,7 @@ jobs:
 
       - name: Set build number for deploy
         id: version-for-deploy
-        run: echo "ver=$(node -e 'console.log(require("./package.json").version)')" >> $GITHUB_OUTPUT
+        run: echo "VERSION=$(node -e 'console.log(require("./package.json").version)')" >> $GITHUB_OUTPUT
 
       - name: Show secret
         run: echo "OPSBASEURL=${{ secrets.OPSBASEURL }}"
@@ -191,7 +193,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:latest
           file: ./Dockerfile
           build-args: |
-            BUILD_NUMBER=${BUILD_NUMBER}
+            BUILD_NUMBER= ${{ env.BUILD_NUMBER }}
 
   deploy:
     permissions:
@@ -203,6 +205,11 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
+      - name: Debug
+        run: |
+          echo "Version: ${{ needs.build.outputs.version }}"
+          echo "Build Number: ${{ needs.build.outputs.build_number }}"
+
       - name: Lowercase the repo name and username
         run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
@@ -212,4 +219,4 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: '${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:latest'
+          images: '${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:${{ needs.build.outputs.version }}-${{ needs.build.outputs.build_number }}"'
