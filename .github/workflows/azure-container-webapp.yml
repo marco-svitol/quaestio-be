@@ -168,11 +168,15 @@ jobs:
 
       - name: Set build number for deploy
         id: build-number-for-deploy
-        run: echo "::set-output name=BUILD_NUMBER::$(date +%s)"
+        run: echo "build_number=env.BUILD_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Read version from package.json
         id: version
         run: echo "::set-output name=version::$(node -e 'console.log(require("./package.json").version)')"
+
+      - name: Set build number for deploy
+        id: version-for-deploy
+        run: echo "ver=$(node -e 'console.log(require("./package.json").version)')" >> $GITHUB_OUTPUT
 
       - name: Show secret
         run: echo "OPSBASEURL=${{ secrets.OPSBASEURL }}"
@@ -208,4 +212,4 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: '${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:${{ needs.build.outputs.version }}-${{ needs.build.outputs.BUILD_NUMBER }}'
+          images: '${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:latest'
