@@ -189,7 +189,7 @@ jobs:
           context: .
           push: true
           tags: | 
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:${{ steps.version.outputs.version }}-${{ env.BUILD_NUMBER }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:${{ steps.version.outputs.version }}build${{ env.BUILD_NUMBER }}
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:latest
           file: ./Dockerfile
           build-args: |
