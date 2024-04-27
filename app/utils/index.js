@@ -69,15 +69,26 @@ module.exports.parseOPSQuota = function(headers){
 	return quotas;
 }
 
-//deprecated
-function setRange(beginRange, endRange){
-	if (beginRange && beginRange != 0){
-		return `&Range=${beginRange}-${(+beginRange)+(+endRange)-1}`;
-	}else{
-		return `&Range=1-100`;
-	}
-}
+module.exports.parseOPSErrorXML = function(xmlString){
+	// Regular expressions to extract xmlns attribute within the fault element, <code> and <message> values
+	const xmlnsPattern = /<fault.*?xmlns="(.*?)"/;
+	const codePattern = /<code>(.*?)<\/code>/s;
+	const messagePattern = /<message>(.*?)<\/message>/s;
 
-function getResultPerPage(){
-	return 12;
+	// Find xmlns attribute using regular expression, <code> and <message> values using regular expressions
+	const xmlnsMatch = xmlString.match(xmlnsPattern);
+	const codeMatch = xmlString.match(codePattern);
+	const messageMatch = xmlString.match(messagePattern);
+
+	// Extract the values
+	const xmlnsValue = xmlnsMatch ? xmlnsMatch[1].trim() : null;
+	const code = codeMatch ? codeMatch[1].trim() : null;
+	const message = messageMatch ? messageMatch[1].trim() : null;
+	const containsOpsEpoOrg = xmlnsValue && xmlnsValue.includes("ops.epo.org");
+	return ({
+			isOPSError: containsOpsEpoOrg, 
+			xmlnsValue: xmlnsValue,
+			code: code,
+			message: message
+	});
 }

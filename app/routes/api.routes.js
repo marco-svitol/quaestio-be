@@ -23,6 +23,7 @@ module.exports = myapp => {
     path: [
       '/api/v2/test',
       '/api/v2/cachereset',
+      '/api/v2/version'
     ]
   }));
 
@@ -31,6 +32,7 @@ module.exports = myapp => {
     path: [
       '/api/v2/test',
       '/api/v2/cachereset',
+      '/api/v2/version'
     ]
   }));
 
@@ -52,6 +54,7 @@ module.exports = myapp => {
   //not protected
   routerapp.post("/v2/cachereset", apitest.cacheReset);
   routerapp.get("/v2/test", apitest.test);
+  routerapp.get("/v2/version", apitest.version);
   //protected
   routerapp.get("/v2/opstest", apitest.opstest);
   routerapp.get("/v2/opendoc", apisearchv2.opendoc);

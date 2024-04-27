@@ -1,5 +1,9 @@
 FROM node:alpine
 
+ARG BUILD_NUMBER
+
+ENV BUILD_NUMBER=$BUILD_NUMBER
+
 WORKDIR /nodejs
 
 COPY ["package.json", "package-lock.json*", "./"]
