@@ -1,5 +1,4 @@
 const axios=require('axios');
-const { id } = require('cls-rtracer');
 const logger=require('../logger'); 
 const opsDOCURL = global.config_data.app.opsDocURL;
 const utils=require('../utils');
@@ -63,12 +62,29 @@ module.exports = class opsService{
           if ((!authResponse.access_token || [400,401,403].includes(statuscode)) && !originalRequest._retry ){
             originalRequest._retry = true;
             await refreshToken();
-            logger.debug (`Successfully acquired token from OPS, will expire in ${authResponse.expires_in} seconds`);
+            logger.debug (`Successfully acquired token from OPS, will expire in approximately ${(authResponse.expires_in/60).toFixed(2)} minutes`);
             return newAxios(originalRequest); 
           }
         }
-      return Promise.reject(error);
-    })
+        return Promise.reject(error);
+      }
+    )
+    // newAxios.interceptors.response.use(
+    //   (response) => {return response},
+    //   async (error) => {
+    //       const terror = {
+    //         "code" : "ERR_BAD_REQUEST",
+    //         "response" : {
+    //           "status" : 403,
+    //           "data" : "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<fault xmlns=\"http://ops.epo.org\">\n    <code>CLIENT.RobotDetected</code>\n    <message>Recent behaviour implies you are a robot. The server is at the moment too busy to serve robots. Please try again later</message>\n</fault>",
+    //         },
+    //         "message" : "Request failed with status code 403",
+    //         "stack" : "this is the stack"
+    //         };
+    //       logger.debug(`Axios: ${terror.code} : ${terror.response.data}`);
+    //     return Promise.reject(terror);
+    //   }
+    // )
     return newAxios;
   }
 

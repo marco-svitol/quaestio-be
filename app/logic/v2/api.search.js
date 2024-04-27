@@ -54,13 +54,37 @@ exports.search = async(req, res) => {
 					body.push({userinfo: userinfo});
 					return res.status(200).send(body);
 				}else{
-					logger.error(`publishedDataSearch:gethistory ${err.message}. Stack: ${err.stack}`);
+					logger.error(`publishedDataSearch:gethistory ${err.message}`);
 					return res.status(500).json({message: `search: ${msgServerError}`});
 				}
 			})
 		}else{
-			logger.error(`publishedDataSearch: ${err.message}. Stack: ${err.stack}`);
-			return res.status(500).json({message: `search: ${msgServerError}`});
+			let error = {
+						status : null,
+						message : ''
+						};
+			if (err?.response?.status === 403 && err?.response?.data){
+				// 403 is returned from OPS, but it doesn't make much sense to send it as is to the fe
+				error.status = 503;
+				const OPSError = utils.parseOPSErrorXML(err.response.data);
+				if (OPSError.isOPSError){
+					error.message = {
+						"OPS_HTTP_STATUS": 403, 
+						"OPS_CODE": OPSError.code,
+						"OPS_MESSAGE": OPSError.message
+					};
+				}else{
+					error.message  = {
+						"HTTP_STATUS":  403,
+						"MESSAGE" : err.message
+					};
+				}
+			}else{
+				error.status = 500
+				error.message = err.message;
+			}
+			logger.error(`publishedDataSearch: Status: ${error.status}. Message: ${JSON.stringify(error.message)}`);
+			return res.status(error.status).json({message: error.message});
 		}
 	})
 }
