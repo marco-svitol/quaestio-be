@@ -21,7 +21,7 @@ exports.changepassword = async ( req, res) => {
   const setPwResponse = await identity.setPassword(newpassword, req.auth.payload.sub, req.headers.authorization);
   if (setPwResponse.status === 200){
     consts.logger.debug(`changepassword: new password was set succesfully`);
-    return res.status(200).send();
+    return res.status(200).json({message: `password changed succesfully`});
   }else{
     consts.logger.error(`changepassword: error ${setPwResponse.status} ${setPwResponse.message}`);
     return res.status(setPwResponse.status).send(setPwResponse.message);
