@@ -62,12 +62,19 @@ exports.bmfolder = async (req, res) => {
     const bmfolderid = req.query.id ? req.query.id : "";
 	const bmfoldername = req.query.name ? req.query.name : "";
 
-    db._updatebmfolder(req.auth.payload.sub, bmfolderid, bmfoldername, (err, actionTaken) => {
+    db._updatebmfolder(req.auth.payload.sub, bmfolderid, bmfoldername, (err, result) => {
         if (err) {
-            logger.error(`notes: ${msgServerError}: ${err}`);
-            return res.status(500).json({ message: `bmfolder: ${msgServerError}` });
-        } else {
-            return res.status(200).json({ action: actionTaken });
+            if (err.status === 403){
+				logger.error(`bmfolder: 403: ${err}`);
+				return res.status(403).json(err.message)
+			}else{
+            	return res.status(500).json({ message: `bmfolder: ${msgServerError}` });
+			}
+		} else {
+            return res.status(200).json({
+				action: result.action,
+				bmfolderid: result.bmfolderid
+			});
         }
     });
 }
