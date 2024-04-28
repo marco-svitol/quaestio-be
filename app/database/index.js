@@ -144,6 +144,13 @@ END`
 module.exports._updatebookmark = async function(uid, docid, bmfolderid, status, docmetadata = '', next){
   const dbRequest = await this.poolrequest();
   const bookmarkbit = bmfolderid ? 1 : 0;
+  // Default bookmark folder id starts always with 00000000-
+  // in dochistory table we don't set this bmfolder id, but replace it with null.
+  // Reason is: to maintain the MSSQL automation that when you remove a bmfolder row also the dochistory bmfolderid
+  //            is set to null 
+  if (bmfolderid){
+    bmfolderid = bmfolderid.substring(0, 9) === '00000000-' ? null : bmfolderid;  
+  }
   dbRequest.input('uid', sql.VarChar(50), uid);
   dbRequest.input('docid', sql.NVarChar, docid);
   dbRequest.input('bookmark', sql.Bit, bookmarkbit);
@@ -196,7 +203,7 @@ IF EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)
   END  
   ELSE  
   BEGIN  
-      INSERT INTO dochistory (uid, docid, status, bookmark, docmetadata, notes, bmfolderid) VALUES (@uid, @docid, @status , 0, '', @notes, null)
+      INSERT INTO dochistory (uid, docid, status, bookmark, docmetadata, notes, bmfolderid) VALUES (@uid, @docid, @status , 1, '', @notes, null)
   END
 `
   dbRequest.query(strQuery)
@@ -209,49 +216,74 @@ IF EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)
 }
 
 module.exports._updatebmfolder = async function(uid, bmfolderid, bmfoldername, next){
-  const dbRequest = await this.poolrequest();
-  dbRequest.input('uid', sql.VarChar(50), uid);
-  dbRequest.input('bmfolderid', sql.VarChar(36), bmfolderid);
-  dbRequest.input('bmfoldername', sql.VarChar(256), bmfoldername);
-  const strQuery = `
-  DECLARE @ActionTaken NVARCHAR(50);
+  if (bmfolderid.substring(0, 9) === '00000000-'){
+    // Raise error with HTTP status 403 and message "can't modify default bookmark folder"
+    const error = new Error(`can't modify or delete default bookmark folder ${bmfolderid}`);
+    error.status = 403; // HTTP status 403 Forbidden
+    return next(error);
+  }
+  
+  try {
+    const dbRequest = await this.poolrequest();
+    dbRequest.input('uid', sql.VarChar(50), uid);
+    dbRequest.input('bmfolderid', sql.VarChar(36), bmfolderid);
+    dbRequest.input('bmfoldername', sql.VarChar(256), bmfoldername);
+    const strQuery = `
+    DECLARE @ActionTaken NVARCHAR(50);
+    DECLARE @NewBMFolderID UNIQUEIDENTIFIER;
+    
+    CREATE TABLE #ActionTaken (Action NVARCHAR(50), NewBMFolderID UNIQUEIDENTIFIER);
+    
+    SET @NewBMFolderID = NEWID();
 
-  CREATE TABLE #ActionTaken (Action NVARCHAR(50));
-
-  MERGE INTO bookmarksfolders AS target
-  USING (SELECT @uid AS uid, @bmfolderid AS bmfolderid, @bmfoldername AS bmfoldername) AS source
-  ON target.uid = source.uid AND target.bmfolderid = source.bmfolderid
-  WHEN MATCHED AND source.bmfoldername = '' THEN
-      DELETE
-  WHEN MATCHED THEN
-      UPDATE SET bmfoldername = source.bmfoldername
-  WHEN NOT MATCHED AND (source.bmfolderid IS NULL OR source.bmfolderid = '') AND (source.bmfoldername IS NOT NULL AND source.bmfoldername <> '') THEN
-      INSERT (uid, bmfolderid, bmfoldername, bmfolderscope) VALUES (source.uid, NEWID(), source.bmfoldername, 'private')
-
-  OUTPUT 
-      $action AS Action
-  INTO #ActionTaken;
-
- SELECT TOP 1 @ActionTaken = Action FROM #ActionTaken;
-
- DROP TABLE #ActionTaken;
- 
- SELECT @ActionTaken AS ActionTaken;
-`
-  dbRequest.query(strQuery)
-    .then(result => {
-      const actionTaken = result.recordset[0].ActionTaken;
-      next(null, actionTaken);
-    })
-    .catch(err => {
-      next(err);
-    })
+    MERGE INTO bookmarksfolders AS target
+    USING (SELECT @uid AS uid, @bmfolderid AS bmfolderid, @bmfoldername AS bmfoldername) AS source
+    ON target.uid = source.uid AND target.bmfolderid = source.bmfolderid
+    WHEN MATCHED AND source.bmfoldername = '' THEN
+        DELETE
+    WHEN MATCHED THEN
+        UPDATE SET bmfoldername = source.bmfoldername
+    WHEN NOT MATCHED AND (source.bmfolderid IS NULL OR source.bmfolderid = '') AND (source.bmfoldername IS NOT NULL AND source.bmfoldername <> '') THEN
+        INSERT (uid, bmfolderid, bmfoldername, bmfolderscope)
+        VALUES (source.uid, @NewBMFolderID, source.bmfoldername, 'private')
+    OUTPUT 
+        $action AS Action,
+        @NewBMFolderID AS NewBMFolderID
+    INTO #ActionTaken;
+    
+    SELECT TOP 1 @ActionTaken = Action, @NewBMFolderID = NewBMFolderID FROM #ActionTaken;
+    
+    DROP TABLE #ActionTaken;
+    
+    SELECT @ActionTaken AS ActionTaken, CASE WHEN @ActionTaken = 'INSERT' THEN @NewBMFolderID ELSE @bmfolderid END AS NewBMFolderID;
+    
+   `;
+    const dbresult = await dbRequest.query(strQuery);
+    const result = { "action": dbresult.recordset[0].ActionTaken,
+                     "bmfolderid": dbresult.recordset[0].NewBMFolderID
+    };
+    next(null, result);
+  } catch (err) {
+    next(err);
+  }
 }
+
 
 module.exports._gethistory = async function(uid, next){
   const dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
-  const strQuery = `SELECT docid, status, bookmark, notes, bmfolderid FROM dochistory WHERE uid = @uid`
+  const strQuery = `
+  SELECT
+    docid,
+    status,
+    bookmark,
+    notes,
+    CASE WHEN bmfolderid IS NULL THEN (SELECT bmfolderid FROM bookmarksfolders WHERE uid = @uid) ELSE bmfolderid END AS bmfolderid
+FROM
+    dochistory 
+WHERE
+    uid = @uid;
+  `
   dbRequest.query(strQuery)
     .then(dbRequest => {
       let rows = dbRequest.recordset;
@@ -325,7 +357,11 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
     status as read_history,
     bookmark,
     notes,
-    bmfolderid
+    CASE WHEN bmfolderid IS NULL 
+    THEN (
+      SELECT bmfolderid FROM bookmarksfolders WHERE uid = @uid
+      ) 
+    ELSE bmfolderid END AS bmfolderid
     
     FROM dochistory 
     WHERE
