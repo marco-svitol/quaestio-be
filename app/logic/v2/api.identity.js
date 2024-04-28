@@ -3,8 +3,8 @@ const msgServerError = consts.msgServerError;
 const identity = consts.identity;
 
 exports.changepassword = async ( req, res) => {
-  const oldpassword = req.query.oldpassword;
-  const newpassword = req.query.newpassword;
+  const oldpassword = req.body.oldpassword;
+  const newpassword = req.body.newpassword;
   const username = req.auth.userInfo.email;
 
   //verify old password
