@@ -278,7 +278,7 @@ module.exports._gethistory = async function(uid, next){
     status,
     bookmark,
     notes,
-    CASE WHEN bmfolderid IS NULL THEN (SELECT bmfolderid FROM bookmarksfolders WHERE uid = @uid) ELSE bmfolderid END AS bmfolderid
+    CASE WHEN bmfolderid IS NULL THEN (SELECT bmfolderid FROM bookmarksfolders WHERE LEFT(bmfolderid,8) = '00000000' AND uid = @uid) ELSE bmfolderid END AS bmfolderid
 FROM
     dochistory 
 WHERE
@@ -359,7 +359,7 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
     notes,
     CASE WHEN bmfolderid IS NULL 
     THEN (
-      SELECT bmfolderid FROM bookmarksfolders WHERE uid = @uid
+      SELECT bmfolderid FROM bookmarksfolders WHERE LEFT(bmfolderid,8) = '00000000' AND uid = @uid
       ) 
     ELSE bmfolderid END AS bmfolderid
     
