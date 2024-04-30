@@ -10,6 +10,7 @@ module.exports = myapp => {
   const apibookmark = require("../logic/v2/api.bookmark.js");
   const apinotes = require("../logic/v2/api.notes.js");
   const apiidentity = require("../logic/v2/api.identity.js");
+  const apicache = require("../logic/v2/api.cache.js");
 
   const apihealth = require("../logic/health.js");
 
@@ -22,7 +23,6 @@ module.exports = myapp => {
   routerapp.use(validateAccessTokenMiddleWare.unless({
     path: [
       '/api/v2/test',
-      '/api/v2/cachereset',
       '/api/v2/version'
     ]
   }));
@@ -31,28 +31,11 @@ module.exports = myapp => {
   routerapp.use(getIdentityInfoMiddleware.unless({
     path: [
       '/api/v2/test',
-      '/api/v2/cachereset',
       '/api/v2/version'
     ]
   }));
 
-  /*
-  const cacheMiddleware = require('../cache/index.js').cacheMiddleware;
-  cacheMiddleware.unless = unless; 
-  routerapp.use(cacheMiddleware.unless({
-    path: [
-      '/api/v2/cachereset',
-      '/api/v2/test',
-      '/api/v2/opstest',
-      "/api/v2/firstpageClipping",
-      '/api/v2/search',
-      '/api/v2/userprofile',
-    ]
-  }))
-*/
-  //V2
   //not protected
-  routerapp.post("/v2/cachereset", apitest.cacheReset);
   routerapp.get("/v2/test", apitest.test);
   routerapp.get("/v2/version", apitest.version);
   //protected
@@ -66,6 +49,9 @@ module.exports = myapp => {
   routerapp.get("/v2/searchbookmark", apibookmark.searchbookmark);
   routerapp.patch("/v2/notes", apinotes.notes);
   routerapp.patch("/v2/changepassword", apiidentity.changepassword);
+  routerapp.delete("/v2/cachereset", apicache.cacheReset);
+  routerapp.get("/v2/cachestats", apicache.cacheStats);
+  routerapp.get("/v2/cachekeys", apicache.cacheKeys);
 
   myapp.use('/api', routerapp);
 

@@ -9,7 +9,6 @@ const identity = new auth0MgmtAPI();
 const msgDatabaseError = 'Database error';
 const msgServerError = 'Server error';
 
-
 module.exports = {
     opsQuaestio,
     msgDatabaseError,

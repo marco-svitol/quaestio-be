@@ -1,66 +1,53 @@
-const logger=require('../logger'); 
-const cache = require('memory-cache');
-let memCache = new cache.Cache();  //Cache managment
-const cacheEnabled = global.config_data.app.cacheEnabled  //en/dis global caching
-const cacheTTLHours = global.config_data.app.cacheTTLHours //Cache persistance
-const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-const stream = require('stream');
+const NodeCache = require("node-cache");
 
-module.exports.cacheMiddleware = function(req, res, next){ //Function used by Router to manage cache
-	let key =  '__express__' + (req.originalUrl || req.url) + JSON.stringify(req.body)
-	let cacheContent = memCache.get(key);
-	if(cacheContent){
-		res.setHeader('Access-Control-Allow-Origin', '*')
-		res.setHeader('Content-Type', 'application/json')
-		res.send( cacheContent );
-		logger.info(`Cache hit with key ${String(key)}.`);//Response in ${perfy.end(rTracer.id())['time']} secs`)
-		return
-	}else{
-		res.sendResponse = res.send;
-		res.send = (body) => { //put in cache only if ther's no error in body
-			if (res.statusCode < 300 && cacheEnabled){
-				memCache.put(key,body,cacheTTLHours*(3600*1000))
-				logger.info(`Caching content with key ${String(key)} duration ${cacheTTLHours} hrs ; n. of CachedKeys: ${String(memCache.memsize())} ; CachedMemorySize ${niceBytes(memCache.exportJson().length)}`);
-			}
-			res.sendResponse(body);
+module.exports = class nodeCache{
+	constructor(){
+    	this.nodeCache = new NodeCache();
+	}
+
+	cacheExpireTimeOPS = global.config_data.app.cacheExpireTimeOPS //OPS expire time
+	cacheEnabled = global.config_data.app.cacheEnabled  //en/dis global caching
+	units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+	cacheReset() {
+		this.nodeCache.flushAll();
+		return true;
+	}
+
+	cacheStats() {
+		const stats = this.nodeCache.getStats();
+		return stats;
+	}
+	
+	cacheKeys(next) {
+		const keys = this.nodeCache.keys();
+		return keys;
+	}
+
+	// Function to calculate TTL based on expiration time
+	calculateTTL() {
+		// Parse expireTimeOPSCache value to obtain the hour and minute parts
+		const expireTimeParts = this.cacheExpireTimeOPS.split(':');
+		const expireTime = new Date();
+		expireTime.setHours(parseInt(expireTimeParts[0]), parseInt(expireTimeParts[1]), 0);
+	
+		const now = new Date();
+		let ttl = expireTime - now;
+		if (ttl < 0) {
+			// If it's already past the expiration time, calculate the remaining time until the next day's expiration time
+			const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+			const nextExpireTime = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), expireTime.getHours(), expireTime.getMinutes(), 0);
+			ttl = nextExpireTime - now;
 		}
-		return next();
+		return ttl;
+	}
 
-		//Stream cache -> split in two middlewares ?
-		const writeStream = new stream.PassThrough();
-		const cacheWriteStream = new stream.PassThrough();
-	
-		const originalPipe = writeStream.pipe.bind(writeStream);
-		writeStream.pipe = (destination, options) => {
-		  cacheWriteStream.pipe(destination, options);
-		  return originalPipe(destination, options);
-		};
-	
-		cacheWriteStream.on('data', (chunk) => {
-			memCache.set(key, chunk, cacheTTLHours*(3600*1000));
-		});
-	
-		res.on('pipe', (source) => {
-		  source.pipe(writeStream);
-		});
-	
-		writeStream.on('end', () => {
-		  res.end();
-		});
-	
-		next();
+	niceBytes(x){ //include a decimal point and a tenths-place digit if presenting less than ten of KB or greater units
+		let l = 0, n = parseInt(x, 10) || 0;
+		while(n >= 1024 && ++l)
+			n = n/1024;
+		return(`${n.toFixed(n < 10 && l > 0 ? 1 : 0)} ${this.units[l]}`);
 	}
 }
 
-module.exports.cacheMiddlewareReset = function() {
-	logger.debug(`Cache had ${String(memCache.memsize())} CachedKeys and was ${niceBytes(memCache.exportJson().length)}.`);
-	memCache.clear();
-	logger.debug(`Cache is now ${niceBytes(memCache.exportJson().length)}.`);
-}
 
-function niceBytes(x){ //include a decimal point and a tenths-place digit if presenting less than ten of KB or greater units
-	let l = 0, n = parseInt(x, 10) || 0;
-	while(n >= 1024 && ++l)
-		n = n/1024;
-	return(`${n.toFixed(n < 10 && l > 0 ? 1 : 0)} ${units[l]}`);
-  }

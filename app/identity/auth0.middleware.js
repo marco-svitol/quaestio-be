@@ -1,7 +1,6 @@
 const { auth } = require("express-oauth2-jwt-bearer");
 const axios = require('axios');
-const NodeCache = require('node-cache');
-const userInfoCache = new NodeCache({ stdTTL: global.config_data.app.userInfoCacheTTLSeconds });
+nodeCache = require("../consts/cache").cacheHandler.nodeCache;
 const logger=require('../logger'); 
 
 const validateAccessTokenMiddleWare = auth({
@@ -19,9 +18,9 @@ module.exports.getIdentityInfoMiddleware = function(req, res, next) {
     const accessToken = req.headers.authorization;
     const auth0Domain = global.config_data.identity.auth0Domain;
 
-    const cacheKey = `userInfo_${accessToken}`;
+    const cacheKey = `userInfo_${req.auth.payload.sub}`;
     // Check if the user information exists in the cache
-    const cachedUserInfo = userInfoCache.get(cacheKey);
+    const cachedUserInfo = nodeCache.get(cacheKey);
     if (cachedUserInfo !== undefined) {
         req.auth.userInfo = cachedUserInfo;
         return next();
@@ -42,7 +41,7 @@ module.exports.getIdentityInfoMiddleware = function(req, res, next) {
             return res.status(status).json({ message });
         }
         // Store the user information in the cache with TTL
-        userInfoCache.set(cacheKey, userInfo);
+        nodeCache.set(cacheKey, userInfo, {stdTTL: global.config_data.app.userInfoCacheTTLSeconds});
         req.auth.userInfo = userInfo ;
         next();
     })

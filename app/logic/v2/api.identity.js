@@ -11,19 +11,19 @@ exports.changepassword = async ( req, res) => {
   const verifyPwResponse = await identity.verifyOldPassword(oldpassword, username);
 
   if (verifyPwResponse.status === 200){
-    consts.logger.debug(`changepassword: old password verification was succesfull`); 
+    logger.debug(`changepassword: old password verification was succesfull`); 
   }else{
-    consts.logger.debug(`changepassword: error ${verifyPwResponse.status}`);
+    logger.debug(`changepassword: error ${verifyPwResponse.status}`);
     return res.status(verifyPwResponse.status).send(verifyPwResponse.message?verifyPwResponse.message:msgServerError);
   }
   
   //set new password
   const setPwResponse = await identity.setPassword(newpassword, req.auth.payload.sub, req.headers.authorization);
   if (setPwResponse.status === 200){
-    consts.logger.debug(`changepassword: new password was set succesfully`);
+    logger.debug(`changepassword: new password was set succesfully`);
     return res.status(200).json({message: `password changed succesfully`});
   }else{
-    consts.logger.error(`changepassword: error ${setPwResponse.status} ${setPwResponse.message}`);
+    logger.error(`changepassword: error ${setPwResponse.status} ${setPwResponse.message}`);
     return res.status(setPwResponse.status).send(setPwResponse.message);
   }  
 } 
