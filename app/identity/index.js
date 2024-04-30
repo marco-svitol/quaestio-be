@@ -1,7 +1,6 @@
-const { isError } = require('lodash');
 const logger=require('../logger'); 
 const axios=require('axios');
-const msgServerError = require('../consts').msgServerError;
+const msgServerError = 'Server error';
 
 module.exports = class auth0MgmtAPI{
   constructor() {

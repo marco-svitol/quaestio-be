@@ -9,7 +9,7 @@
             "certpath": "",
             "certpw": "",
             "cacheEnabled": 1,
-            "cacheTTLHours": 8,
+            "cacheExpireTimeOPS" : "03:00",
             "serverPort": 80,
             "maxOPSResults": 1000,
             "userInfoCacheTTLSeconds": 600,
@@ -39,12 +39,6 @@
             "auth0SPASecret" : "",
             "auth0M2MClientId" : "",
             "auth0M2MSecret" : ""
-        },
-        "tokenProperties": {
-            "secret": "",
-            "tokenTimeout": 172800,
-            "refresh_secret": "",
-            "refresh_tokenTimeout": 172800
         }
     },
     "production": {

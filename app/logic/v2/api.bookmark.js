@@ -6,7 +6,7 @@ const status = ["new", "listed", "viewed"];
 
 exports.bookmark = async (req, res) => {
 	//const bookmark = parseInt(req.query.bookmark, 10) || 0;
-	const bmfolderid = req.query.bookmark === '0' ? null : req.query.bookmark;
+	const bmfolderid = req.query.bookmark === '0' || req.query.bookmark === '' ? null : req.query.bookmark;
 
 	let docmetadata = '';
 
@@ -14,18 +14,18 @@ exports.bookmark = async (req, res) => {
 		try {
 		docmetadata = await new Promise((resolve, reject) => {
 			opsQuaestio.publishedDataSearch(`pn=${req.query.doc_num}`, (err, body) => {
-			if (!err) {
-				resolve(JSON.stringify(body[0]));
-			} else {
-				logger.error(`bookmark: ${msgServerError}: ${err}`);
-				res.status(500).json({ message: `bookmark: ${msgServerError}` });
-				reject(err);
-			}
+				if (!err) {
+					resolve(JSON.stringify(body[0]));
+				} else {
+					logger.error(`bookmark: ${msgServerError}: ${err}`);
+					res.status(500).json({ message: `bookmark: ${msgServerError}` });
+					reject(err);
+				}
 			});
 		});
 		} catch (error) {
-		logger.error(`bookmark: ${msgServerError}: ${err}`);
-		return res.status(500).json({ message: `bookmark: ${msgServerError}` });
+			logger.error(`bookmark: ${msgServerError}: ${err}`);
+			return res.status(500).json({ message: `bookmark: ${msgServerError}` });
 		}
 	}
 

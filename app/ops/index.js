@@ -35,6 +35,8 @@ module.exports = class opsService{
     this.commonAxiosInstance = this.createCommonAxiosInstance();
   }
 
+  cacheH = require("../consts/cache").cacheHandler;
+
   createCommonAxiosInstance(){
     const newAxios = axios.create();
     
@@ -88,7 +90,7 @@ module.exports = class opsService{
     return newAxios;
   }
 
-  async publishedDataSearch(strQuery, next){
+  async publishedDataSearchNoCache(strQuery, next){
     this.getAllDocumentsRecurse(strQuery)
       .then(result => {
         result.documents = this.getFamilyOldests(result.documents); // Call getFamilyOldests here
@@ -103,6 +105,32 @@ module.exports = class opsService{
       return next(err, null, null);  
     })
   }
+
+  async publishedDataSearch(strQuery, next) {
+    const cachedResult = this.cacheH.nodeCache.get(strQuery);
+    if (cachedResult) {
+      return next(null, cachedResult.documents, cachedResult.opsLights);
+    }
+
+    try {
+      const result = await this.getAllDocumentsRecurse(strQuery);
+      result.documents = this.getFamilyOldests(result.documents);
+
+      // Deep copy of result.opsLights
+      const cacheLabeledOPSLights = utils.setCacheOPSQuota(JSON.parse(JSON.stringify(result.opsLights))); 
+      // Cache the result with the calculated TTL
+      this.cacheH.nodeCache.set(strQuery, { documents: result.documents, opsLights: cacheLabeledOPSLights }, this.cacheH.calculateTTL());
+
+      return next(null, result.documents, result.opsLights);
+    } catch (err) {
+      if (err.response && err?.response?.status === 404) {
+        return next(null, [], err.response.headers);
+      } else {
+        return next(err, null, null);
+      }
+    }
+  }
+
   
   async getAllDocumentsRecurse(strQuery, pageStart = 1, pageEnd = 100, allDocs = [], lastOpsLights = null) {
     try {

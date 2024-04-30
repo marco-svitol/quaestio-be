@@ -69,6 +69,12 @@ module.exports.parseOPSQuota = function(headers){
 	return quotas;
 }
 
+module.exports.setCacheOPSQuota = function(quotas){
+	const cacheHint = 'cached ';
+	quotas[0]["x-throttling-control"] = quotas[0]["x-throttling-control"].replace(/^[^(]+/, cacheHint);
+	return quotas
+}
+
 module.exports.parseOPSErrorXML = function(xmlString){
 	// Regular expressions to extract xmlns attribute within the fault element, <code> and <message> values
 	const xmlnsPattern = /<fault.*?xmlns="(.*?)"/;
