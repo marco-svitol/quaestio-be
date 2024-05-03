@@ -1,6 +1,7 @@
 const consts=require('../../consts'); 
 const msgServerError = consts.msgServerError;
 const identity = consts.identity;
+const logger=require('../../logger'); 
 
 exports.changepassword = async ( req, res) => {
   const oldpassword = req.body.oldpassword;
