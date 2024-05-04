@@ -1,18 +1,62 @@
-module.exports.insertDotBeforeLastAlphanumeric = function insertDotBeforeLastAlphanumeric(inputString) {
-  for (let i = inputString.length - 1; i >= 0; i--) {
-    if (/[a-zA-Z]/.test(inputString[i])) {
-      // Found the last alphanumeric character, insert a dot before it
-      const modifiedString =
-        inputString.slice(0, i) + '.' + inputString.slice(i);
-
-      return modifiedString;
-    }
+module.exports.adaptDocIdForImageSearch = function adaptDocIdForImageSearch(inputString) {
+	// Define the list of suffixes
+	const suffixes = ['U1', /* add more suffixes as needed */];
+	// Check if the input string ends with one of the suffixes
+	for (const suffix of suffixes) {
+	  if (inputString.endsWith(suffix)) {
+		return inputString.slice(0, -1); // Remove the last character and return
+	  }
+	}
+  
+	// If not ending with a suffix, proceed with the original logic
+	for (let i = inputString.length - 1; i >= 0; i--) {
+	  if (/[a-zA-Z]/.test(inputString[i])) {
+		// Found the last alphanumeric character, insert a dot before it
+		const modifiedString = inputString.slice(0, i) + '.' + inputString.slice(i);
+		return modifiedString;
+	  }
+	}
+  
+	// If no alphanumeric character is found, return the original string
+	return inputString;
   }
 
-  // If no alphanumeric character is found, return the original string
-  return inputString;
-}
+  module.exports.adaptDocIdForImageSearch = function adaptDocIdForImageSearch(inputString) {
+	// Define the list of regular suffixes
+	const returnWithoutLastCharSuffixes = ['U1', /* add more regular suffixes as needed */];
+  
+	// Define the list of suffixes to return as is
+	const returnAsIsSuffixes = ['U'];
+  
+	// Check if the input string ends with one of the suffixes to return as is
+	for (const suffix of returnAsIsSuffixes) {
+	  if (inputString.endsWith(suffix)) {
+		return inputString; // Return input string as is
+	  }
+	}
+  
+	// Check if the input string ends with one of the regular suffixes
+	for (const suffix of returnWithoutLastCharSuffixes) {
+	  if (inputString.endsWith(suffix)) {
+		return inputString.slice(0, -1); // Remove the last character and return
+	  }
+	}
+  
+	// If not ending with any of the specified suffixes, proceed with the original logic
+	for (let i = inputString.length - 1; i >= 0; i--) {
+	  if (/[a-zA-Z]/.test(inputString[i])) {
+		// Found the last alphanumeric character, insert a dot before it
+		const modifiedString = inputString.slice(0, i) + '.' + inputString.slice(i);
+		return modifiedString;
+	  }
+	}
+  
+	// If no alphanumeric character is found, return the original string
+	return inputString;
+  }
+  
 
+  
 module.exports.validateDate = function validateDate(fromField, toField){
 	var date_regex = /^(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|1\d|2\d|3[01])$/;
 	fromFieldValid = date_regex.test(fromField);
@@ -97,4 +141,13 @@ module.exports.parseOPSErrorXML = function(xmlString){
 			code: code,
 			message: message
 	});
+}
+
+// Function to check if a string variable follows CID pattern
+module.exports.isCID = function(str) {
+    // Define CID pattern using regular expression
+    const cidPattern = /^[A-Za-z0-9]{8}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{12}$/;
+    
+    // Test if the string matches the pattern
+    return cidPattern.test(str);
 }

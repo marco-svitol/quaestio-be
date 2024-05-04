@@ -141,9 +141,8 @@ END`
     })
 }
 
-module.exports._updatebookmark = async function(uid, docid, bmfolderid, status, docmetadata = '', next){
+module.exports._updatebookmark = async function(uid, docid, bookmark, bmfolderid, status, docmetadata = '', next){
   const dbRequest = await this.poolrequest();
-  const bookmarkbit = bmfolderid ? 1 : 0;
   // Default bookmark folder id starts always with 00000000-
   // in dochistory table we don't set this bmfolder id, but replace it with null.
   // Reason is: to maintain the MSSQL automation that when you remove a bmfolder row also the dochistory bmfolderid
@@ -153,7 +152,7 @@ module.exports._updatebookmark = async function(uid, docid, bmfolderid, status, 
   }
   dbRequest.input('uid', sql.VarChar(50), uid);
   dbRequest.input('docid', sql.NVarChar, docid);
-  dbRequest.input('bookmark', sql.Bit, bookmarkbit);
+  dbRequest.input('bookmark', sql.Bit, bookmark);
   dbRequest.input('bmfolderid',sql.VarChar(36), bmfolderid);
   dbRequest.input('status', sql.Int, status);
   dbRequest.input('docmetadata', sql.NVarChar, docmetadata);
