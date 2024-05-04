@@ -42,10 +42,10 @@ exports.search = async(req, res) => {
 					const histBody = body.map(doc => {
 						if (history){
 							const f = history.find(hdoc =>  hdoc.docid === doc.doc_num);
-							doc.read_history = f?status[f.status]:status[0];
-							doc.bookmark = f?f.bookmark:false;
-							doc.notes = f?f.notes:"";
-							doc.bmfolderid = f?f.bmfolderid:"";
+							doc.read_history = f?.status?status[f.status]:status[0];
+							doc.bookmark = f?.bookmark?f.bookmark:false;
+							doc.notes = f?.notes?f.notes:"";
+							doc.bmfolderid = f?.bmfolderid?f.bmfolderid:"";
 						} 
 						return doc;
 					})

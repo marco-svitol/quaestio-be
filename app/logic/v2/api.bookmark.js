@@ -3,14 +3,17 @@ const msgServerError = require('../../consts').msgServerError;
 const opsQuaestio = require("../../consts").opsQuaestio;
 const db=require('../../database');
 const status = ["new", "listed", "viewed"];
+const utils=require('../../utils');
 
 exports.bookmark = async (req, res) => {
-	//const bookmark = parseInt(req.query.bookmark, 10) || 0;
-	const bmfolderid = req.query.bookmark === '0' || req.query.bookmark === '' ? null : req.query.bookmark;
-
+	let bookmark = 0;
+	let bmfolderid = null; 
 	let docmetadata = '';
 
-	if (bmfolderid != null) {
+	//Check if bmfolderid and then bookmark = 1
+	if (utils.isCID(req.query.bookmark)){
+		bmfolderid = req.query.bookmark;
+		bookmark = 1;
 		try {
 		docmetadata = await new Promise((resolve, reject) => {
 			opsQuaestio.publishedDataSearch(`pn=${req.query.doc_num}`, (err, body) => {
@@ -29,7 +32,7 @@ exports.bookmark = async (req, res) => {
 		}
 	}
 
-	db._updatebookmark(req.auth.payload.sub, req.query.doc_num, bmfolderid, status.indexOf("new"), docmetadata, (err) => {
+	db._updatebookmark(req.auth.payload.sub, req.query.doc_num, bookmark, bmfolderid, status.indexOf("new"), docmetadata, (err) => {
 		if (err) {
 		logger.error(`bookmark: ${msgServerError}: ${err}`);
 		return res.status(500).json({ message: `bookmark: ${msgServerError}` });

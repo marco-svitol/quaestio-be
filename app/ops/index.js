@@ -420,8 +420,8 @@ module.exports = class opsService{
 
 
   async publishedDataPublicationDocDBImages(docid, next){
-    const docNumWithDot = utils.insertDotBeforeLastAlphanumeric(docid);
-    await this.commonAxiosInstance.get(`/rest-services/published-data/publication/epodoc/${docNumWithDot}/images`)
+    const imageDocId = utils.adaptDocIdForImageSearch(docid);
+    await this.commonAxiosInstance.get(`/rest-services/published-data/publication/epodoc/${imageDocId}/images`)
     .then (async (response) => {
       return next(null, response.data, response.headers);
     })
