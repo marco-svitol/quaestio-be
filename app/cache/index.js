@@ -5,8 +5,8 @@ module.exports = class nodeCache{
     	this.nodeCache = new NodeCache( { checkperiod: 120 } );;
 	}
 
-	cacheExpireTimeOPS = global.config_data.app.cacheExpireTimeOPS //OPS expire time
-	cacheEnabled = global.config_data.app.cacheEnabled  //en/dis global caching
+	cacheExpireTime = global.config_data.cache.cacheExpireTime //OPS expire time
+	cacheEnabled = global.config_data.cache.cacheEnabled  //en/dis global caching
 	units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
 	cacheReset() {
@@ -27,7 +27,7 @@ module.exports = class nodeCache{
 	// Function to calculate TTL based on expiration time
 	calculateTTL() {
 		// Parse expireTimeOPSCache value to obtain the hour and minute parts
-		const expireTimeParts = this.cacheExpireTimeOPS.split(':');
+		const expireTimeParts = this.cacheExpireTime.split(':');
 		const expireTime = new Date();
 		expireTime.setHours(parseInt(expireTimeParts[0]), parseInt(expireTimeParts[1]), 0);
 	

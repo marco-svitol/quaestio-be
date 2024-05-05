@@ -11,6 +11,7 @@ module.exports = myapp => {
   const apinotes = require("../logic/v2/api.notes.js");
   const apiidentity = require("../logic/v2/api.identity.js");
   const apicache = require("../logic/v2/api.cache.js");
+  const apiopsmonitoring = require("../logic/v2/api.opsMonitoring.js");
 
   const apihealth = require("../logic/health.js");
 
@@ -52,6 +53,7 @@ module.exports = myapp => {
   routerapp.delete("/v2/cachereset", apicache.cacheReset);
   routerapp.get("/v2/cachestats", apicache.cacheStats);
   routerapp.get("/v2/cachekeys", apicache.cacheKeys);
+  routerapp.get("/v2/opsMonitoring", apiopsmonitoring.opsMonitoring);
 
   myapp.use('/api', routerapp);
 

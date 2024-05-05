@@ -1,15 +1,16 @@
 const axios=require('axios');
 const logger=require('../logger'); 
-const opsDOCURL = global.config_data.app.opsDocURL;
+const opsDOCURL = global.config_data.ops.opsDocURL;
 const utils=require('../utils');
+const opsMonitoring=require('./opsFairUseMonitoring.js');
 
 //Authentication Axios instance
 let authParams = new URLSearchParams({grant_type : 'client_credentials'});
 authParams.append('extraparam', 'value');
 const authOptions = {
-  baseURL: `${global.config_data.app.opsBaseUrl}`,
+  baseURL: `${global.config_data.ops.opsBaseUrl}`,
   headers: {
-    'Authorization': `Basic ${Buffer.from(global.config_data.app.opsClientID+":"+global.config_data.app.opsClientSecret,'utf8').toString('base64')}`,
+    'Authorization': `Basic ${Buffer.from(global.config_data.ops.opsClientID+":"+global.config_data.ops.opsClientSecret,'utf8').toString('base64')}`,
     'Content-Type': 'application/x-www-form-urlencoded'
   },
 };
@@ -33,6 +34,7 @@ async function refreshToken() {//{ = (next) => {
 module.exports = class opsService{
   constructor() {
     this.commonAxiosInstance = this.createCommonAxiosInstance();
+    this.opsMonitoring = new opsMonitoring();
   }
 
   cacheH = require("../consts/cache").cacheHandler;
@@ -42,7 +44,7 @@ module.exports = class opsService{
     
     newAxios.interceptors.request.use(
       async config => {
-        config.baseURL = `${global.config_data.app.opsBaseUrl}`,
+        config.baseURL = `${global.config_data.ops.opsBaseUrl}`,
         config.headers = {
             Authorization : `Bearer ${authResponse.access_token}`,
             Accept : 'application/json, application/pdf, application/jpeg, application/gif, image/png'
@@ -55,7 +57,10 @@ module.exports = class opsService{
     );
 
     newAxios.interceptors.response.use(
-      (response) => {return response},
+      (response) => {
+        this.opsMonitoring.updateMonitoring(response.headers)
+        return response
+      },
       async (error) => {
         if (error.response && error.config) {
           const statuscode = error.response.status;
@@ -117,7 +122,7 @@ module.exports = class opsService{
       result.documents = this.getFamilyOldests(result.documents);
 
       // Deep copy of result.opsLights
-      const cacheLabeledOPSLights = utils.setCacheOPSQuota(JSON.parse(JSON.stringify(result.opsLights))); 
+      const cacheLabeledOPSLights = this.setCacheOPSQuota(JSON.parse(JSON.stringify(result.opsLights))); 
       // Cache the result with the calculated TTL
       this.cacheH.nodeCache.set(strQuery, { documents: result.documents, opsLights: cacheLabeledOPSLights }, this.cacheH.calculateTTL());
 
@@ -177,7 +182,7 @@ module.exports = class opsService{
       const nextPageStart = pageEnd + 1;
       const nextPageEnd = pageEnd + 100;
 
-      if (nextPageStart <= patentServiceResponseParsed.opsResultsInfo.total_count && nextPageStart <= global.config_data.app.maxOPSResults) {
+      if (nextPageStart <= patentServiceResponseParsed.opsResultsInfo.total_count && nextPageStart <= global.config_data.ops.opsMaxResults) {
         // Recursively call the function with the next page range
         return this.getAllDocumentsRecurse(strQuery, nextPageStart, nextPageEnd, allDocs, patentServiceResponseParsed.opsLights);
       }
@@ -192,8 +197,8 @@ module.exports = class opsService{
   //  aggregate docs with same family and pick the oldest
   //  if the oldest is a "weird" language introduce language priorities:  EP, US, GB, WO, FR, DE, IT and choose another one
   getFamilyOldests(opsPublications) {
-    const countryPriority = global.config_data.app.countryPrio;
-    const overridePubPriorityDate = global.config_data.app.defPubPrioCrit === "country" ? true : false;
+    const countryPriority = global.config_data.ops.opsCountryPrio;
+    const overridePubPriorityDate = global.config_data.ops.opsDefPubPrioCrit === "country" ? true : false;
 
     const families = {};
 
@@ -420,7 +425,7 @@ module.exports = class opsService{
 
 
   async publishedDataPublicationDocDBImages(docid, next){
-    const imageDocId = utils.adaptDocIdForImageSearch(docid);
+    const imageDocId = this.adaptDocIdForImageSearch(docid);
     await this.commonAxiosInstance.get(`/rest-services/published-data/publication/epodoc/${imageDocId}/images`)
     .then (async (response) => {
       return next(null, response.data, response.headers);
@@ -489,6 +494,46 @@ module.exports = class opsService{
     }
   }
 
+  adaptDocIdForImageSearch(inputString) {
+    // Define the list of regular suffixes
+    const returnWithoutLastCharSuffixes = ['U1', /* add more regular suffixes as needed */];
+  
+    // Define the list of suffixes to return as is
+    const returnAsIsSuffixes = ['U'];
+  
+    // Check if the input string ends with one of the suffixes to return as is
+    for (const suffix of returnAsIsSuffixes) {
+      if (inputString.endsWith(suffix)) {
+      return inputString; // Return input string as is
+      }
+    }
+  
+    // Check if the input string ends with one of the regular suffixes
+    for (const suffix of returnWithoutLastCharSuffixes) {
+      if (inputString.endsWith(suffix)) {
+      return inputString.slice(0, -1); // Remove the last character and return
+      }
+    }
+  
+    // If not ending with any of the specified suffixes, proceed with the original logic
+    for (let i = inputString.length - 1; i >= 0; i--) {
+      if (/[a-zA-Z]/.test(inputString[i])) {
+      // Found the last alphanumeric character, insert a dot before it
+      const modifiedString = inputString.slice(0, i) + '.' + inputString.slice(i);
+      return modifiedString;
+      }
+    }
+  
+    // If no alphanumeric character is found, return the original string
+    return inputString;
+  }
+
+  setCacheOPSQuota(quotas){
+    const cacheHint = 'cached ';
+    quotas[0]["x-throttling-control"] = quotas[0]["x-throttling-control"].replace(/^[^(]+/, cacheHint);
+    return quotas
+  }
+
   //Set OPS Alert/Quotas in config: 
   //  1. daily & weekly quotas in MBytes
   //  2. treshold percentage for warning (70%) and alert (90%)
@@ -499,6 +544,9 @@ module.exports = class opsService{
   // 1. handle semaphore to introduce a latency between recursive calls
   // 2. handle quota-used to chack against tresholds:
   //    2.1 Send mail in case of warning / Alert
+
+  //https://www.epo.org/en/service-support/ordering/fair-use
+  //Downloading data via OPS is free of charge up to a maximum data volume of 4 GB per week ("free threshold"). A week is a calendar week from Monday, 00.00 hrs to Sunday, 24.00 hrs GMT
 }
 
 

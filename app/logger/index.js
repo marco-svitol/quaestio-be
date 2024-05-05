@@ -1,13 +1,13 @@
 const utils=require('../utils');
 const logdnaWinston = require('logdna-winston');
-const logdnaOptions = {
-  key: global.config_data.app.logdnakey,
-  hostname: global.config_data.app.loghostname,
-  app: 'Quaestio-BackEnd',
-  env: global.config_data.app.logenv,
-  level: global.config_data.app.loglevel, // Default to debug, maximum level of log, doc: https://github.com/winstonjs/winston#logging-levels
-  indexMeta: true // Defaults to false, when true ensures meta object will be searchable
-}
+// const logdnaOptions = {
+//   key: global.config_data.app.logdnakey,
+//   hostname: global.config_data.app.loghostname,
+//   app: 'Quaestio-BackEnd',
+//   env: global.config_data.app.logenv,
+//   level: global.config_data.app.loglevel, // Default to debug, maximum level of log, doc: https://github.com/winstonjs/winston#logging-levels
+//   indexMeta: true // Defaults to false, when true ensures meta object will be searchable
+// }
 
 var winston = require('winston');
 const format = require('winston').format;
@@ -109,9 +109,4 @@ module.exports.srvconsoledir = function (request, start=1, err = 0){ //internal:
 		this.error(`${srvname} service requested from ${request.hostname} raised this error: ${err}`)
 		perfy.end(rTracer.id());
 	}
-}
-
-module.exports.tokenInfo = function (req) {
-  const expTime =  utils.tokenExpirationDate(req.auth.exp);
-  logger.verbose(`CheckJWT: decoded token: sub: ${req.auth.sub}. Expires in ${expTime.hours} hours, ${expTime.minutes} minutes`);
 }
