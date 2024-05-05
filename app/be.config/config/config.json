@@ -2,19 +2,27 @@
     "development": {
         "app": {
             "loglevel": "debug",
+            "serverPort": 80
+        },
+        "cache" : {
+            "cacheEnabled": 1,
+            "cacheExpireTime" : "03:00",
+            "auth0UserInfoCacheTTLSeconds": 600
+        },
+        "ops" : {
             "opsBaseUrl": "",
             "opsClientID": "",
             "opsClientSecret": "",
             "opsDocURL": "https://worldwide.espacenet.com/patent/search/family",
-            "certpath": "",
-            "certpw": "",
-            "cacheEnabled": 1,
-            "cacheExpireTimeOPS" : "03:00",
-            "serverPort": 80,
-            "maxOPSResults": 1000,
-            "userInfoCacheTTLSeconds": 600,
-            "countryPrio": ["EP", "WO", "US", "GB", "DE", "FR", "IT"],
-            "defPubPrioCrit": "date"
+            "opsMaxResults": 1000,
+            "opsCountryPrio": ["EP", "WO", "US", "GB", "DE", "FR", "IT"],
+            "opsDefPubPrioCrit": "date",
+            "quotas" : {
+                "hourly" : "450",
+                "week" : "4096",
+                "warningThresholdPercentage" : "70",
+                "alertThresholdPercentage" : "90"
+            }
         },
         "sqlConfigPool": {
             "connectionLimit": 10,

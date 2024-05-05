@@ -41,7 +41,7 @@ module.exports.getIdentityInfoMiddleware = function(req, res, next) {
             return res.status(status).json({ message });
         }
         // Store the user information in the cache with TTL
-        nodeCache.set(cacheKey, userInfo, {stdTTL: global.config_data.app.userInfoCacheTTLSeconds});
+        nodeCache.set(cacheKey, userInfo, {stdTTL: global.config_data.cache.auth0UserInfoCacheTTLSeconds});
         req.auth.userInfo = userInfo ;
         next();
     })

@@ -8,7 +8,7 @@ exports.test = async (req, res) => {
 }
 
 exports.opstest = async (req, res) => { 
-	logger.debug(`OPSBASEURL:${global.config_data.app.opsBaseUrl} OPSCLIENTID:${global.config_data.app.opsClientID} OPSCLIENTSECRET:${global.config_data.app.opsClientSecret}`);
+	logger.debug(`OPSBASEURL:${global.config_data.ops.opsBaseUrl} OPSCLIENTID:${global.config_data.ops.opsClientID} OPSCLIENTSECRET:${global.config_data.ops.opsClientSecret}`);
 	return res.status(200).send("Check logs");
 }
 
