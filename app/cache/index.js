@@ -2,7 +2,7 @@ const NodeCache = require("node-cache");
 
 module.exports = class nodeCache{
 	constructor(){
-    	this.nodeCache = new NodeCache();
+    	this.nodeCache = new NodeCache( { checkperiod: 120 } );;
 	}
 
 	cacheExpireTimeOPS = global.config_data.app.cacheExpireTimeOPS //OPS expire time
@@ -39,7 +39,8 @@ module.exports = class nodeCache{
 			const nextExpireTime = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), expireTime.getHours(), expireTime.getMinutes(), 0);
 			ttl = nextExpireTime - now;
 		}
-		return ttl;
+		// Convert ttl from milliseconds to seconds and round to the nearest whole number
+		return Math.round(ttl / 1000);
 	}
 
 	niceBytes(x){ //include a decimal point and a tenths-place digit if presenting less than ten of KB or greater units
