@@ -489,6 +489,16 @@ module.exports = class opsService{
     }
   }
 
+  //Set OPS Alert/Quotas in config: 
+  //  1. daily & weekly quotas in MBytes
+  //  2. treshold percentage for warning (70%) and alert (90%)
+  //  3. mail(s) to send warning and alert to
+  //  4. mail frequency
+  //
+  // Parse OPS Header Quotas reply. Differentiate:
+  // 1. handle semaphore to introduce a latency between recursive calls
+  // 2. handle quota-used to chack against tresholds:
+  //    2.1 Send mail in case of warning / Alert
 }
 
 
