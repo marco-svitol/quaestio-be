@@ -22,7 +22,9 @@ app.use(cors({
 // 	})
 //   );
 
-app.use(rTracer.expressMiddleware());							// keep s unique ID for each request
+app.use(rTracer.expressMiddleware({
+	echoHeader: true
+}));							// keeps unique ID for each request
 app.use(bodyParser.json()); 									// parse requests of content-type - application/json
 app.use(bodyParser.urlencoded({ extended: true })); 			// parse requests of content-type - application/x-www-form-urlencoded
 app.use((req, res, next) => {

@@ -5,36 +5,18 @@ const db=require('../../database');
 const status = ["new", "listed", "viewed"];
 const utils=require('../../utils');
 
-exports.search = async(req, res) => {
+exports.search = async(req, res, next) => {
 	//validate params middleware??
-	reqQuery="";
-	if (typeof req.query.doc_num === "string" && req.query.doc_num.trim() !== "") {
-		reqQuery = `pn=${req.query.doc_num}`;
-	} else {
-		const conditions = [];
-		if (req.query.pa) {
-			conditions.push(await getQueryFromId("applicants", req.query.pa, req.auth.userInfo.pattodate_org_id));
-		}
-
-		if (req.query.tecarea) {
-			conditions.push(`(${await getQueryFromId("tecareas", req.query.tecarea, req.auth.userInfo.pattodate_org_id)})`);
-		}
-
-		if (req.query.pdfrom) {
-			conditions.push(utils.validateDate(req.query.pdfrom, req.query.pdto));
-		}
-
-		if (conditions.length > 0) {
-			reqQuery = conditions.join(" AND ");
-		}
-	}
+	const reqQuery = await buildQuery(req.query, req.auth.userInfo.pattodate_org_id);
 
 	if (!reqQuery) {
 		logger.warn('search: The query for OPS is empty: nothing to search.');
 		return res.status(200).send({});
 	}
+
 	logger.debug(reqQuery);
-	opsQuaestio.publishedDataSearch(reqQuery, (err, body, headers) => {
+	
+	opsQuaestio.publishedDataSearch(reqQuery, (err, body, cache) => {
 		if (!err) {
 			logger.debug(`publishedDataSearch: total filtered and grouped by family: ${body.length}`);
 			db._gethistory(req.auth.payload.sub, (err, history) => { 
@@ -50,9 +32,11 @@ exports.search = async(req, res) => {
 						return doc;
 					})
 					body = histBody.sort((a,b) => b.date - a.date);
-					const userinfo = headers[0]?utils.parseOPSQuota(headers[0]):utils.parseOPSQuota(headers);
-					body.push({userinfo: userinfo});
-					return res.status(200).send(body);
+					
+					res.locals.cache = cache;
+					res.locals.status = 200
+					res.locals.body = body
+					return next();
 				}else{
 					logger.error(`publishedDataSearch:gethistory ${err.message}`);
 					return res.status(500).json({message: `search: ${msgServerError}`});
@@ -89,6 +73,34 @@ exports.search = async(req, res) => {
 	})
 }
 
+async function buildQuery(query, orgId) {
+  let reqQuery = "";
+  
+  if (typeof query.doc_num === "string" && query.doc_num.trim() !== "") {
+    reqQuery = `pn=${query.doc_num}`;
+  } else {
+    const conditions = [];
+    
+    if (query.pa) {
+      conditions.push(await getQueryFromId("applicants", query.pa, orgId));
+    }
+    
+    if (query.tecarea) {
+      conditions.push(`(${await getQueryFromId("tecareas", query.tecarea, orgId)})`);
+    }
+    
+    if (query.pdfrom) {
+      conditions.push(utils.validateDate(query.pdfrom, query.pdto));
+    }
+    
+    if (conditions.length > 0) {
+      reqQuery = conditions.join(" AND ");
+    }
+  }
+  
+  return reqQuery;
+};
+
 async function getQueryFromId (field, id, org_id){
 	try{
 		return await db._getQuery(field, id, org_id);	}
@@ -98,7 +110,7 @@ async function getQueryFromId (field, id, org_id){
 	}
 }
 
-exports.opendoc = async(req, res) => {
+exports.opendoc = async(req, res, next) => {
 	//update doc history and return OPS Link
 	db._updatehistory(req.auth.payload.sub, req.query.doc_num, status.indexOf("viewed"), (err) => {
 		if (err){
@@ -107,14 +119,11 @@ exports.opendoc = async(req, res) => {
 		}else{
 			//retrieve link to firstpageClipping
 			const opslink = opsQuaestio.getLinkFromDocId(req.query.doc_num);
-			opsQuaestio.getImagesLinksFromDocId((req.query.doc_num), (imagesLinks) => {
-				if (imagesLinks){
-					const userinfo = imagesLinks.headers[0]?utils.parseOPSQuota(imagesLinks.headers[0]):utils.parseOPSQuota(imagesLinks.headers);
-					return res.status(200).send({ops_link: opslink, images_links: imagesLinks.imagesLinks, userinfo: userinfo});
-				}else{
-					return res.status(200).send({ops_link: opslink, images_links: "", userinfo: ""});
-				}
-				
+			opsQuaestio.getImagesLinksFromDocId((req.query.doc_num), (imagesLinks, cache) => {
+				res.locals.cache = cache;
+				res.locals.status = 200
+				res.locals.body = {ops_link: opslink, images_links: imagesLinks ? imagesLinks : ""}
+				return next();
 			})
 		}
 	})
@@ -135,3 +144,95 @@ exports.firstpageClipping = async(req, res) => {
 		}
 	})
 } 
+
+
+
+
+
+
+
+
+/*
+const search = async (req, res, next) => {
+  try {
+    const reqQuery = await buildQuery(req.query, req.auth.userInfo.pattodate_org_id);
+    
+    if (!reqQuery) {
+      logger.warn('search: The query for OPS is empty: nothing to search.');
+      return res.status(200).send({});
+    }
+    
+    logger.debug(reqQuery);
+    
+    const { body, cache } = await new Promise((resolve, reject) => {
+      opsQuaestio.publishedDataSearch(reqQuery, (err, body, cache) => {
+        if (err) reject(err);
+        else resolve({ body, cache });
+      });
+    });
+
+    const history = await getHistory(req.auth.payload.sub);
+
+    const processedBody = processBody(body, history);
+
+    res.locals.cache = cache;
+    res.locals.status = 200;
+    res.locals.body = processedBody;
+    next();
+  } catch (err) {
+    handleError(err, res);
+  }
+};
+
+const getHistory = async (userId) => {
+  return new Promise((resolve, reject) => {
+    db._gethistory(userId, (err, history) => {
+      if (err) reject(err);
+      else resolve(history);
+    });
+  });
+};
+
+const processBody = (body, history) => {
+  return body.map(doc => {
+    if (history) {
+      const f = history.find(hdoc => hdoc.docid === doc.doc_num);
+      doc.read_history = f?.status ? status[f.status] : status[0];
+      doc.bookmark = f?.bookmark ? f.bookmark : false;
+      doc.notes = f?.notes ? f.notes : "";
+      doc.bmfolderid = f?.bmfolderid ? f.bmfolderid : "";
+    }
+    return doc;
+  }).sort((a, b) => b.date - a.date);
+};
+
+const handleError = (err, res) => {
+  let error = {
+    status: null,
+    message: ''
+  };
+
+  if (err?.response?.status === 403 && err?.response?.data) {
+    error.status = 503;
+    const OPSError = utils.parseOPSErrorXML(err.response.data);
+    if (OPSError.isOPSError) {
+      error.message = {
+        "OPS_HTTP_STATUS": 403,
+        "OPS_CODE": OPSError.code,
+        "OPS_MESSAGE": OPSError.message
+      };
+    } else {
+      error.message = {
+        "HTTP_STATUS": 403,
+        "MESSAGE": err.message
+      };
+    }
+  } else {
+    error.status = 500;
+    error.message = err.message;
+  }
+
+  logger.error(`publishedDataSearch: Status: ${error.status}. Message: ${JSON.stringify(error.message)}`);
+  res.status(error.status).json({ message: error.message });
+};
+*/

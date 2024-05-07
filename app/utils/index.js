@@ -10,13 +10,6 @@ module.exports.validateDate = function validateDate(fromField, toField){
 	return null
 }
 
-module.exports.parseOPSQuota = function(headers){
-	let throttling = headers["x-throttling-control"].replace(',','').replace('(','').replace(')','').split(' ');
-	throttling = throttling.map(x => {return x.split('=')});
-	let quotas = ({"throttling-control": throttling, "individualquotaperhour-used": headers["x-individualquotaperhour-used"], "registeredquotaperweek-used": headers["x-registeredquotaperweek-used"]});
-	return quotas;
-}
-
 module.exports.parseOPSErrorXML = function(xmlString){
 	// Regular expressions to extract xmlns attribute within the fault element, <code> and <message> values
 	const xmlnsPattern = /<fault.*?xmlns="(.*?)"/;

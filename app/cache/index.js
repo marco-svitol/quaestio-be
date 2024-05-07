@@ -19,7 +19,7 @@ module.exports = class nodeCache{
 		return stats;
 	}
 	
-	cacheKeys(next) {
+	cacheKeys() {
 		const keys = this.nodeCache.keys();
 		return keys;
 	}
