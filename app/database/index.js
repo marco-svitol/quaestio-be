@@ -1,7 +1,6 @@
 const logger=require('../logger'); 
 const sqlConfigPool = global.config_data.sqlConfigPool;
 const sql = require('mssql');
-const utils=require('../utils');
 
 const getuserProfile = `
 SELECT

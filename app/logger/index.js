@@ -1,4 +1,3 @@
-const utils=require('../utils');
 const logdnaWinston = require('logdna-winston');
 // const logdnaOptions = {
 //   key: global.config_data.app.logdnakey,
@@ -61,6 +60,7 @@ var logger = winston.createLogger({
   format: winston.format.combine(
     appendTimestamp({ tz: 'Europe/Rome' }),
     winston.format.printf(log => {    
+      let rTrac = '';
       if (rTracer.id() != null){
         rTrac = rTracer.id();
       }else{

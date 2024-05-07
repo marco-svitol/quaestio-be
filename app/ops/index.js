@@ -1,7 +1,6 @@
 const axios=require('axios');
 const logger=require('../logger'); 
 const opsDOCURL = global.config_data.ops.opsDocURL;
-const utils=require('../utils');
 const opsMonitoring=require('./opsFairUseMonitoring.js');
 
 //Authentication Axios instance
@@ -95,53 +94,34 @@ module.exports = class opsService{
     return newAxios;
   }
 
-  async publishedDataSearchNoCache(strQuery, next){
-    this.getAllDocumentsRecurse(strQuery)
-      .then(result => {
-        result.documents = this.getFamilyOldests(result.documents); // Call getFamilyOldests here
-        return next(null, result.documents, result.opsLights);
-      })
-    .catch(err => {
-      if (err.response){
-        if (err.response.status === 404){
-          return next(null, [], err.response.headers)
-        }
-      }
-      return next(err, null, null);  
-    })
-  }
-
   async publishedDataSearch(strQuery, next) {
     const cachedResult = this.cacheH.nodeCache.get(strQuery);
     if (cachedResult) {
-      return next(null, cachedResult.documents, cachedResult.opsLights);
+      return next(null, cachedResult.documents, "hit");
     }
 
     try {
       const result = await this.getAllDocumentsRecurse(strQuery);
       result.documents = this.getFamilyOldests(result.documents);
-
-      // Deep copy of result.opsLights
-      const cacheLabeledOPSLights = this.setCacheOPSQuota(JSON.parse(JSON.stringify(result.opsLights))); 
       // Cache the result with the calculated TTL
-      this.cacheH.nodeCache.set(strQuery, { documents: result.documents, opsLights: cacheLabeledOPSLights }, this.cacheH.calculateTTL());
+      this.cacheH.nodeCache.set(strQuery, { documents: result.documents}, this.cacheH.calculateTTL());
 
-      return next(null, result.documents, result.opsLights);
+      return next(null, result.documents);
     } catch (err) {
       if (err.response && err?.response?.status === 404) {
-        return next(null, [], err.response.headers);
+        return next(null, []);
       } else {
-        return next(err, null, null);
+        return next(err, null);
       }
     }
   }
 
   
-  async getAllDocumentsRecurse(strQuery, pageStart = 1, pageEnd = 100, allDocs = [], lastOpsLights = null) {
+  async getAllDocumentsRecurse(strQuery, pageStart = 1, pageEnd = 100, allDocs = []) {
     try {
       const range = `${pageStart}-${pageEnd}`;
       const queryUrl = `/rest-services/published-data/search/biblio?q=${strQuery}&Range=${range}`;
-      // Filter for Kind type, get page range, get response headers for Lights
+      // Filter for Kind type, get page range
       const patentServiceResponseParsed = this.parsePatentServiceResponse(await this.commonAxiosInstance.get(queryUrl));
       
       logger.debug(`getAllDocumentsRecurse: pageStart=${pageStart}; pageEnd=${pageEnd}; total: ${patentServiceResponseParsed.opsPublications.length}(=${patentServiceResponseParsed.opsResultsInfo.total_count}-${patentServiceResponseParsed.opsResultsInfo.total_count-patentServiceResponseParsed.opsPublications.length})`);
@@ -184,11 +164,11 @@ module.exports = class opsService{
 
       if (nextPageStart <= patentServiceResponseParsed.opsResultsInfo.total_count && nextPageStart <= global.config_data.ops.opsMaxResults) {
         // Recursively call the function with the next page range
-        return this.getAllDocumentsRecurse(strQuery, nextPageStart, nextPageEnd, allDocs, patentServiceResponseParsed.opsLights);
+        return this.getAllDocumentsRecurse(strQuery, nextPageStart, nextPageEnd, allDocs);
       }
   
-      // Return all documents and the opsLights from the last iteration when done
-      return { documents: allDocs, opsLights: lastOpsLights || patentServiceResponseParsed.opsLights };
+      // Return all documents
+      return { documents: allDocs};
     } catch (err) {
       throw err; // Handle errors as needed
     }
@@ -428,10 +408,10 @@ module.exports = class opsService{
     const imageDocId = this.adaptDocIdForImageSearch(docid);
     await this.commonAxiosInstance.get(`/rest-services/published-data/publication/epodoc/${imageDocId}/images`)
     .then (async (response) => {
-      return next(null, response.data, response.headers);
+      return next(null, response.data);
     })
     .catch((err) => {
-      return next(err, null, null);  
+      return next(err, null);  
     })
   }
 
@@ -463,23 +443,34 @@ module.exports = class opsService{
     return docFormats[0][$];
   }
 
-  getImagesLinksFromDocId(docid, next){
-    //call ops to list of images
-    this.publishedDataPublicationDocDBImages(docid, (err, data, headers) => {
-      if (!err) {
-        try {
-          const imagesLinks = this.parseImagesListBody(data['ops:world-patent-data']['ops:document-inquiry']['ops:inquiry-result']['ops:document-instance']);
-          return next ({imagesLinks: imagesLinks, headers: headers});
-        }
-        catch(err){
-          logger.error(`getImagesLinksFromDocId: ${err.message}. Stack: ${err.stack}`);
-          return next(null);
-        }
+  async getImagesLinksFromDocId(docid, next) {
+    const cacheKey = `getImagesLinksFromDocId|${docid}`;
+    const cachedResult = this.cacheH.nodeCache.get(cacheKey);
+    
+    if (cachedResult) {
+      return next(cachedResult.imagesLinks, "hit");
+    }
+    
+    try {
+      const data = await new Promise((resolve, reject) => {
+        this.publishedDataPublicationDocDBImages(docid, (err, data) => {
+          if (err) reject(err);
+          else resolve(data);
+        });
+      });
+      
+      const imagesLinks = this.parseImagesListBody(data['ops:world-patent-data']['ops:document-inquiry']['ops:inquiry-result']['ops:document-instance']);
+      this.cacheH.nodeCache.set(cacheKey, { imagesLinks }, this.cacheH.calculateTTL());
+      return next(imagesLinks);
+    } catch (err) {
+      if (err?.response?.status === 404){
+        logger.info(`getImagesLinksFromDocId: images not found for doc ${docid}`);
+        logger.debug(`getImagesLinksFromDocId: ${err.message}`);
       }else{
-        logger.error(`getImagesLinksFromDocId: ${err.message}. Stack: ${err.stack}`);
-        return next(null);
+        logger.error(`getImagesLinksFromDocId: ${err.message}.`);
       }
-    })
+      return next(null);
+    }
   }
 
   async getImage(imgPath, imgFormat, imgPage, next){
@@ -544,9 +535,17 @@ module.exports = class opsService{
   // 1. handle semaphore to introduce a latency between recursive calls
   // 2. handle quota-used to chack against tresholds:
   //    2.1 Send mail in case of warning / Alert
-
-  //https://www.epo.org/en/service-support/ordering/fair-use
+  //
+ //https://www.epo.org/en/service-support/ordering/fair-use
   //Downloading data via OPS is free of charge up to a maximum data volume of 4 GB per week ("free threshold"). A week is a calendar week from Monday, 00.00 hrs to Sunday, 24.00 hrs GMT
+//
+  // Clean:
+  // 1. remove previous OPSParse but leave cache hint
+  //
+  // Cache:
+  // Add:
+  // 1. Cache for openDoc and Image? 
+ 
 }
 
 
