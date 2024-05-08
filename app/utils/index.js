@@ -1,14 +1,35 @@
-module.exports.validateDate = function validateDate(fromField, toField){
-	var date_regex = /^(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|1\d|2\d|3[01])$/;
-	fromFieldValid = date_regex.test(fromField);
-	toFieldValid = date_regex.test(toField);
-	if (fromFieldValid && !toFieldValid){toField = fromField}
-	else if (!fromFieldValid && toFieldValid){fromField = toField};
-	if (fromFieldValid || toFieldValid){
-		return `pd within "${fromField} ${toField}" `
+// module.exports.validateDate = function validateDate(fromField, toField){
+// 	var date_regex = /^(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|1\d|2\d|3[01])$/;
+// 	fromFieldValid = date_regex.test(fromField);
+// 	toFieldValid = date_regex.test(toField);
+// 	if (fromFieldValid && !toFieldValid){toField = fromField}
+// 	else if (!fromFieldValid && toFieldValid){fromField = toField};
+// 	if (fromFieldValid || toFieldValid){
+// 		return `pd within "${fromField} ${toField}" `
+// 	}
+// 	return null
+// }
+
+module.exports.validateDate = function validateDate(fromField, toField) {
+	var date_regex = /^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$|^(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])$/;
+	var fromFieldValid = date_regex.test(fromField);
+	var toFieldValid = date_regex.test(toField);
+	
+	if (fromFieldValid && !toFieldValid) {
+			// Transform toField to match the format of fromField
+			toField = fromField.replace(/-/g, '');
+	} else if (!fromFieldValid && toFieldValid) {
+			// Transform fromField to match the format of toField
+			fromField = toField.replace(/-/g, '');
 	}
-	return null
+
+	if (fromFieldValid || toFieldValid) {
+			return `pd within "${fromField} ${toField}"`;
+	}
+	
+	return null;
 }
+
 
 module.exports.parseOPSErrorXML = function(xmlString){
 	// Regular expressions to extract xmlns attribute within the fault element, <code> and <message> values
