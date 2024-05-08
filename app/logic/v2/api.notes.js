@@ -10,7 +10,7 @@ exports.notes = async (req, res) => {
             logger.error(`notes: ${msgServerError}: ${err}`);
             return res.status(500).json({ message: `notes: ${msgServerError}` });
         } else {
-            return res.status(200).send();
+            return res.status(200).json({message: 'ok'});
         }
     });
 }
