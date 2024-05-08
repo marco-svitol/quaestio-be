@@ -199,7 +199,7 @@ IF EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)
   END  
   ELSE  
   BEGIN  
-      INSERT INTO dochistory (uid, docid, status, bookmark, docmetadata, notes, bmfolderid) VALUES (@uid, @docid, @status , 1, '', @notes, null)
+      INSERT INTO dochistory (uid, docid, status, bookmark, docmetadata, notes, bmfolderid) VALUES (@uid, @docid, @status , 0, '', @notes, null)
   END
 `
   dbRequest.query(strQuery)
@@ -314,7 +314,7 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
   dbRequest.input('uid', sql.VarChar(50), uid);
   if (typeof queryParams.doc_num === "string" && queryParams.doc_num.trim() !== "" && queryParams.doc_num.trim().toLowerCase() !== "undefined") {
 		dbRequest.input('doc_num', sql.VarChar(50), queryParams.doc_num);
-    whereClause = ` AND JSON_VALUE(docmetadata, '$.doc_num') = @doc_num`;
+    whereClause = ` AND docid = @doc_num`;
 	} else {
     const conditions = [];
 
@@ -336,8 +336,22 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
   }
 
   const strQuery = `
-    SELECT
-    JSON_VALUE(docmetadata, '$.doc_num') AS doc_num,
+  WITH CTE AS (
+    SELECT 
+        docid,
+        CASE WHEN docmetadata = '' THEN '{"doc_num": "' + docid +'", "type": "", "familyid": "", "country": "", "invention_title": "' + docid +'", "date": "", "abstract": "", "applicant": "", "inventor_name": "", "ops_link": ""}' ELSE docmetadata END AS docmetadata,
+        status,
+        bookmark,
+        notes,
+        bmfolderid
+    FROM 
+        dochistory 
+    WHERE
+      uid = @uid
+  )
+
+  SELECT
+	docid AS doc_num,
     JSON_VALUE(docmetadata, '$.type') AS type,
     JSON_VALUE(docmetadata, '$.familyid') AS familyid,
     JSON_VALUE(docmetadata, '$.country') AS country,
@@ -351,14 +365,15 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
     bookmark,
     notes,
     CASE WHEN bmfolderid IS NULL 
-    THEN (
-      SELECT bmfolderid FROM bookmarksfolders WHERE LEFT(bmfolderid,8) = '00000000' AND uid = @uid
-      ) 
-    ELSE bmfolderid END AS bmfolderid
+        THEN (
+          SELECT bmfolderid FROM bookmarksfolders WHERE LEFT(bmfolderid,8) = '00000000' AND uid = @uid
+        ) 
+        ELSE bmfolderid 
+    END AS bmfolderid
     
-    FROM dochistory 
-    WHERE
-    uid = @uid AND bookmark = 1 ${whereClause}
+  FROM 
+      CTE
+  WHERE bookmark = 1 ${whereClause} 
 `
 
   logger.verbose(strQuery);

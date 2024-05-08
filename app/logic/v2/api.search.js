@@ -23,13 +23,14 @@ exports.search = async(req, res, next) => {
 			db._gethistory(req.auth.payload.sub, (err, history) => { 
 				if (!err){
 					const histBody = body.map(doc => {
+						let f = null;
 						if (history){
-							const f = history.find(hdoc =>  hdoc.docid === doc.doc_num);
-							doc.read_history = f?.status?status[f.status]:status[0];
-							doc.bookmark = f?.bookmark?f.bookmark:false;
-							doc.notes = f?.notes?f.notes:"";
-							doc.bmfolderid = f?.bmfolderid?f.bmfolderid:"";
-						} 
+							f = history.find(hdoc =>  hdoc.docid === doc.doc_num);
+						}
+						doc.read_history = f?.status?status[f.status]:status[0];
+						doc.bookmark = f?.bookmark?f.bookmark:false;
+						doc.notes = f?.notes?f.notes:"";
+						doc.bmfolderid = f?.bmfolderid?f.bmfolderid:"";
 						return doc;
 					})
 					body = histBody.sort((a,b) => b.date - a.date);
@@ -37,6 +38,8 @@ exports.search = async(req, res, next) => {
 					res.locals.cache = cache;
 					res.locals.status = 200;
 					res.locals.body = body;
+					//Prevent FE to crash if no userinfo and to fix items count in search page
+  				res.locals.body.push({userinfo: {}});
 					return next();
 				}else{
 					logger.error(`publishedDataSearch:gethistory ${err.message}`);
