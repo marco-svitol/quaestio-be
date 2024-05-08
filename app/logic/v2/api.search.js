@@ -4,6 +4,7 @@ const opsQuaestio = require("../../consts").opsQuaestio;
 const db=require('../../database');
 const status = ["new", "listed", "viewed"];
 const utils=require('../../utils');
+const cacheH = require("../../consts/cache").cacheHandler;
 
 exports.search = async(req, res, next) => {
 	//validate params middleware??
@@ -34,8 +35,8 @@ exports.search = async(req, res, next) => {
 					body = histBody.sort((a,b) => b.date - a.date);
 					
 					res.locals.cache = cache;
-					res.locals.status = 200
-					res.locals.body = body
+					res.locals.status = 200;
+					res.locals.body = body;
 					return next();
 				}else{
 					logger.error(`publishedDataSearch:gethistory ${err.message}`);
@@ -102,8 +103,16 @@ async function buildQuery(query, orgId) {
 };
 
 async function getQueryFromId (field, id, org_id){
+	cacheKey = `${field}|${id}|${org_id}`;
 	try{
-		return await db._getQuery(field, id, org_id);	}
+		const cachedResult = cacheH.nodeCache.get(cacheKey);
+		if (cachedResult){
+			return cachedResult;
+		}
+		const result = await db._getQuery(field, id, org_id);
+		cacheH.nodeCache.set(cacheKey, result, cacheH.calculateTTL());
+		return result;
+	}
 	catch(err){
 		logger.error(`getQueryFromId: Query not found with field=${field} id=${id} org_id=${org_id}. ${err.message}`);
 		return '';
@@ -144,6 +153,7 @@ exports.firstpageClipping = async(req, res) => {
 		}
 	})
 } 
+
 
 
 

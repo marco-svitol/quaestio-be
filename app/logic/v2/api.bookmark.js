@@ -4,6 +4,8 @@ const opsQuaestio = require("../../consts").opsQuaestio;
 const db=require('../../database');
 const status = ["new", "listed", "viewed"];
 const utils=require('../../utils');
+const { cacheHandler } = require('../../consts/cache');
+const cacheH = require("../../consts/cache").cacheHandler;
 
 exports.bookmark = async (req, res) => {
 	let bookmark = 0;
@@ -62,22 +64,29 @@ exports.searchbookmark = async(req, res) => {
 }
 
 exports.bmfolder = async (req, res) => {
-    const bmfolderid = req.query.id ? req.query.id : "";
+  const bmfolderid = req.query.id ? req.query.id : "";
 	const bmfoldername = req.query.name ? req.query.name : "";
 
-    db._updatebmfolder(req.auth.payload.sub, bmfolderid, bmfoldername, (err, result) => {
-        if (err) {
-            if (err.status === 403){
-				logger.error(`bmfolder: 403: ${err}`);
-				return res.status(403).json(err.message)
-			}else{
-            	return res.status(500).json({ message: `bmfolder: ${msgServerError}` });
-			}
-		} else {
-            return res.status(200).json({
-				action: result.action,
-				bmfolderid: result.bmfolderid
-			});
-        }
-    });
+	//invalidate userprofile cache of current user
+	const cacheKey = `${req.auth.payload.sub}|${req.auth.userInfo.pattodate_org_id}`;
+	cacheResult = cacheH.nodeCache.del( cacheKey );
+	if (cacheResult > 0){
+		logger.debug(`bmfolder: invalidate cache with key ${cacheKey}`);
+	}
+
+	try{
+  	qResult = await db._updatebmfolder(req.auth.payload.sub, bmfolderid, bmfoldername);
+    return res.status(200).json({
+			action: qResult.action,
+			bmfolderid: qResult.bmfolderid
+		})
+	}catch(err){
+		if (err.status === 403){
+			logger.error(`bmfolder: 403: ${err}`);
+			return res.status(403).json(err.message)
+		}else{
+			logger.error(`bmfolder: ${err}`);
+			return res.status(500).json({ message: `bmfolder: ${msgServerError}` });
+		}
+	}
 }
