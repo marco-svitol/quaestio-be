@@ -39,7 +39,7 @@ exports.search = async(req, res, next) => {
 					res.locals.status = 200;
 					res.locals.body = body;
 					//Prevent FE to crash if no userinfo and to fix items count in search page
-  				res.locals.body.push({userinfo: {}});
+  				//res.locals.body.push({userinfo: {}});
 					return next();
 				}else{
 					logger.error(`publishedDataSearch:gethistory ${err.message}`);
