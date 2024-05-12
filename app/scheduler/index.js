@@ -3,7 +3,7 @@ const logger=require('../logger');
 const { forEach } = require('lodash');
 const opsQuaestio = require("../consts").opsQuaestio;
 
-bot.scheduleJob("21 1 * * *", function(){
+bot.scheduleJob("30 3 * * *", function(){
   
   const reqQueryList = [
     "PA=SIEGENIA",
