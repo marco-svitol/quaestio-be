@@ -6,7 +6,7 @@
         },
         "cache" : {
             "cacheEnabled": 1,
-            "cacheExpireTime" : "03:00",
+            "cacheExpireTime" : "01:00",
             "auth0UserInfoCacheTTLSeconds": 600
         },
         "ops" : {
