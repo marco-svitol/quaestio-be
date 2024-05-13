@@ -10,17 +10,17 @@ bot.scheduleJob("30 3 * * *", function(){
     "PA=GEZE",
     "PA=ROTO FRANK",
     "PA=SOTRALU",
-    "PA=FERCO",
-    "PA=Dormakaba Group",
-    "PA=Silca",
-    "PA=Advanced Diagnostics",
-    "PA=JMA Altuna Group",
-    "PA=Shenzhen Xhorse Electronics",
-    "PA=Hillman Group/Minute Key",
-    "PA=Iconx/MyKey",
-    "PA=iKeyless / Car Keys Express",
-    "PA=Keylessride",
-    "PA=East of Wu / Wu Kuo Shen"
+    "PA=FERCO NOT PA=(ARCH OR HARDWARE OR TONEY OR DEV OR COM OR SEATING OR SOCIO)",
+    "PA=(DORMAKABA OR DORMA OR KABA OR ILCO)",
+    "PA=SILCA",
+    "PA=(ADVANCED AND DIAGNOSTICS)",
+    "PA=(JMA OR (ALEJANDRO AND ALTUNA))",
+    "PA=XHORSE",
+    "PA=(HILLMAN or (MINUTE AND KEY))",
+    "PA=ICONX",
+    "PA=IKEYLESS",
+    "PA=(KEYLESSRIDE OR (SECURED AND MOBILITY) OR ((EMMANUEL OR ENRIQUE) AND LOPEZ))",
+    "PA=(WU AND (EAST OR GUOSHENG OR ((KUO OR GUO) AND (SHEN OR SHENG))))"
   ];
 
   reqQueryList.forEach((reqQuery, index) => {
