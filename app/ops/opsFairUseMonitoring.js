@@ -168,10 +168,10 @@ module.exports = class OpsFairUseMonitoring {
       case 'green':
         return 0;
       case 'yellow':
-        factor = 1.2;
+        factor = 0.5;
         break;
       case 'red':
-        factor = 2;
+        factor = 1;
         break;
       case 'black': {
         logger.error (`OPS blocked us :(. Wait until ${this.getHMFromNow(600)}`);
