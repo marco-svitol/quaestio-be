@@ -32,7 +32,7 @@ bot.scheduleJob("30 3 * * *", function(){
           logger.info(`BOT publishedDataSearch: query: ${reqQuery} returned err ${err} and the cache bit is ${cache}`);
         }
       });
-    }, index * 120000); // 2 minutes interval
+    }, index * 180000); // 3 minutes interval
   });
 
   logger.debug(`BOT: next scheduled at ${this.nextInvocation()}`);

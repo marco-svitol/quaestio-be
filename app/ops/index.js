@@ -2,6 +2,7 @@ const axios=require('axios');
 const logger=require('../logger'); 
 const opsDOCURL = global.config_data.ops.opsDocURL;
 const opsMonitoring=require('./opsFairUseMonitoring.js');
+const rTracer = require('cls-rtracer')
 
 //Authentication Axios instance
 let authParams = new URLSearchParams({grant_type : 'client_credentials'});
@@ -43,6 +44,21 @@ module.exports = class opsService{
     
     newAxios.interceptors.request.use(
       async config => {
+        
+        const serviceName = this.opsMonitoring.identifyServiceFromURL(config.url);
+        const secondsToWait = this.opsMonitoring.getSecondsToWait(serviceName);
+        
+        logger.debug(`service: ${serviceName};\
+        getAllowedServiceFreq ${this.opsMonitoring.getAllowedServiceFreq(serviceName)};\
+        getServiceFreq ${this.opsMonitoring.getServiceFreq(serviceName)};\
+        getSecondsToWait ${this.opsMonitoring.getSecondsToWait(serviceName)};\
+        getServiceLight ${this.opsMonitoring.getServiceLight(serviceName)};`);
+        
+        if (secondsToWait > 0) {
+          // If there are seconds to wait, delay the execution of the request
+          await new Promise(resolve => setTimeout(resolve, secondsToWait * 1000));
+        }
+
         config.baseURL = `${global.config_data.ops.opsBaseUrl}`,
         config.headers = {
             Authorization : `Bearer ${authResponse.access_token}`,
@@ -57,8 +73,9 @@ module.exports = class opsService{
 
     newAxios.interceptors.response.use(
       (response) => {
-        this.opsMonitoring.updateMonitoring(response.headers)
-        return response
+        const serviceName = this.opsMonitoring.identifyServiceFromURL(response.config.url);
+        this.opsMonitoring.updateMonitoring(response.headers, serviceName)
+        return response 
       },
       async (error) => {
         if (error.response && error.config) {
