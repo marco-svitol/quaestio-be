@@ -38,8 +38,7 @@ exports.search = async(req, res, next) => {
 					res.locals.cache = cache;
 					res.locals.status = 200;
 					res.locals.body = body;
-					//Prevent FE to crash if no userinfo and to fix items count in search page
-  				//res.locals.body.push({userinfo: {}});
+
 					return next();
 				}else{
 					logger.error(`publishedDataSearch:gethistory ${err.message}`);
@@ -52,7 +51,7 @@ exports.search = async(req, res, next) => {
 						message : ''
 						};
 			if (err?.response?.status === 403 && err?.response?.data){
-				// 403 is returned from OPS, but it doesn't make much sense to send it as is to the fe
+				// 403 is returned from OPS, but we convert it in a more meaningful 503 for the FE
 				error.status = 503;
 				const OPSError = utils.parseOPSErrorXML(err.response.data);
 				if (OPSError.isOPSError){

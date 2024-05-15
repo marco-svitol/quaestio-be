@@ -82,7 +82,7 @@ module.exports=logger;
 
 module.exports.srvconsoledir = function (request, start=1, err = 0){ //internal: log service call info to console
   let srvname = request.path;
-  const ignoreServiceNames = ['/health', '/metrics'];
+  const ignoreServiceNames = ['/health', '/metrics', '/'];
 
   //do not print health service to prevent logs flood! 
   if (ignoreServiceNames.includes(srvname)) {
