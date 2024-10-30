@@ -150,6 +150,11 @@ jobs:
                 "name" : "MAXOPSRESULTS",
                 "value": "${{ vars.MAXOPSRESULTS }}",
                 "slotSetting": false
+              },
+              {
+                "name" : "AZURE_TRANSLATOR_KEY",
+                "value": "${{ vars.AZURE_TRANSLATOR_KEY }}",
+                "slotSetting": false
               }
             ]        
 

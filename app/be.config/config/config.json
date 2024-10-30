@@ -16,6 +16,10 @@
             "opsDocURL": "https://worldwide.espacenet.com/patent/search/family",
             "opsMaxResults": 1000,
             "opsCountryPrio": ["EP", "WO", "US", "GB", "DE", "FR", "IT"],
+            "opsTranslationEnabled": false,
+            "opsTranslateAbstract": false,
+            "opsToLang": "en",
+            "opsFriendlyLangs": ["en","it","de","fr"],
             "opsDefPubPrioCrit": "date",
             "quotas" : {
                 "hourly" : "450",
@@ -47,6 +51,11 @@
             "auth0SPASecret" : "",
             "auth0M2MClientId" : "",
             "auth0M2MSecret" : ""
+        },
+        "translator" : {
+            "azureTranslatorKey" : "",
+            "azureTranslatorEndpoint" : "https://api.cognitive.microsofttranslator.com/",
+            "azureTranslatorLocation" : "westeurope"
         }
     },
     "production": {
