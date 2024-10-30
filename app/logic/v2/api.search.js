@@ -41,7 +41,7 @@ exports.search = async(req, res, next) => {
 
 					return next();
 				}else{
-					logger.error(`publishedDataSearch:gethistory ${err.message}`);
+					logger.error(`publishedDataSearch:gethistory ${err.message}. Stack: ${err.stack}`);
 					return res.status(500).json({message: `search: ${msgServerError}`});
 				}
 			})
@@ -69,8 +69,9 @@ exports.search = async(req, res, next) => {
 			}else{
 				error.status = 500
 				error.message = err.message;
+				error.stack = err.stack;
 			}
-			logger.error(`publishedDataSearch: Status: ${error.status}. Message: ${JSON.stringify(error.message)}`);
+			logger.error(`publishedDataSearch: Status: ${error.status}. Message: ${JSON.stringify(error.message)}. Stack: ${error.stack}`);
 			return res.status(error.status).json({message: error.message});
 		}
 	})
