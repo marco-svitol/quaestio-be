@@ -51,6 +51,11 @@
             "auth0SPASecret" : "",
             "auth0M2MClientId" : "",
             "auth0M2MSecret" : ""
+        },
+        "translator" : {
+            "azureTranslatorKey" : "",
+            "azureTranslatorEndpoint" : "https://api.cognitive.microsofttranslator.com/",
+            "azureTranslatorLocation" : "westeurope"
         }
     },
     "production": {

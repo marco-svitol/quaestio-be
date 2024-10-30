@@ -1,9 +1,9 @@
 const logger = require('../logger');
 const axios = require('axios').default;
 const { v4: uuidv4 } = require('uuid');
-let key = "1a8b015efab347638ada312cc74515e8";
-let endpoint = "https://api.cognitive.microsofttranslator.com/";
-let location = "westeurope";
+let key = global.config_data.translator.azureTranslatorKey;
+let endpoint = global.config_data.translator.azureTranslatorEndpoint;
+let location = global.config_data.translator.azureTranslatorLocation;
 
 // Static axios instance
 const axiosInstance = axios.create({

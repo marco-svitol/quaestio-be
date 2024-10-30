@@ -141,7 +141,6 @@ module.exports = class opsService{
     return opsDocHelper.getLinkFromDocIdHelper(docNum);
   }
 
-
   async getImagesLinksFromDocId(docid, next) {
     const cacheKey = `getImagesLinksFromDocId|${docid}`;
     const cachedResult = this.cacheH.nodeCache.get(cacheKey);
