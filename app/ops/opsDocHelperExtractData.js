@@ -24,12 +24,12 @@ function normalizeFields(field) {
     normalizedField =  [field];
   }
   return normalizedField.map(field => {
-      if (field && field['p'] && field['p']['$']) {
-          field['$'] = field['p']['$'];
-          delete field['p']['$'];
-      }
-      return field;
-    });
+    if (field && field['p'] && field['p']['$']) {
+        field['$'] = field['p']['$'];
+        delete field['p']['$'];
+    }
+    return field;
+  });
 }
 
 //TODO: Verify lang priority also here?
@@ -41,12 +41,17 @@ async function publicationDataFilteredAsync(body, lang) {
   const docNum = `${body['@country']}${body['@doc-number']}`;
 
   //Title
-  const normalizedTitle = normalizeFields(body['bibliographic-data']['invention-title']);
-  langTitle = findFieldLang(normalizedTitle, lang);
-  if (global.config_data.ops.opsTranslationEnabled){
-    langTitle = await langCheck(langTitle);
+  if (body['bibliographic-data']['invention-title']){
+    const normalizedTitle = normalizeFields(body['bibliographic-data']['invention-title']);
+    langTitle = findFieldLang(normalizedTitle, lang);
+    if (global.config_data.ops.opsTranslationEnabled){
+      langTitle = await langCheck(langTitle);
+    }
+    docData.title = langTitle['$'];
+  }else{
+    logger.warn(`publicationDataFilteredAsync: missing Title in doc n.${docNum}`);
+    docData.title = `-no title- ${docNum}`;
   }
-  docData.title = langTitle['$'];
 
   // Date: process 'publication-reference' array and get the 'date' from the first occurrence
   const publicationReferences = normalizeFields(body['bibliographic-data']['publication-reference']['document-id']);
