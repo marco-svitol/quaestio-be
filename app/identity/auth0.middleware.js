@@ -40,6 +40,10 @@ module.exports.getIdentityInfoMiddleware = function(req, res, next) {
             const status = 500
             return res.status(status).json({ message });
         }
+        global.config_data.ops.opsTranslationEnabled = userInfo.pattodate_translationEnabled || global.config_data.ops.opsTranslationEnabled;
+        global.config_data.ops.opsTranslateAbstract = userInfo.pattodate_translateAbstract || global.config_data.ops.opsTranslateAbstract
+        global.config_data.ops.opsToLang = userInfo.pattodate_toLang || global.config_data.ops.opsToLang
+        global.config_data.ops.opsFriendlyLangs = userInfo.pattodate_friendlyLangs || global.config_data.ops.opsFriendlyLangs
         // Store the user information in the cache with TTL
         nodeCache.set(cacheKey, userInfo, {stdTTL: global.config_data.cache.auth0UserInfoCacheTTLSeconds});
         req.auth.userInfo = userInfo ;
