@@ -25,12 +25,14 @@ exports.search = async(req, res, next) => {
 					const histBody = body.map(doc => {
 						let f = null;
 						if (history){
-							f = history.find(hdoc =>  hdoc.docid === doc.doc_num);
+							d = history.find(hdoc => hdoc.docid === doc.doc_num);
+							f = history.find(hdoc => hdoc.familyid == doc.familyid);
 						}
+
 						doc.read_history = f?.status?status[f.status]:status[0];
-						doc.bookmark = f?.bookmark?f.bookmark:false;
-						doc.notes = f?.notes?f.notes:"";
-						doc.bmfolderid = f?.bmfolderid?f.bmfolderid:"";
+						doc.bookmark = d?.bookmark?d.bookmark:false;
+						doc.notes = d?.notes?d.notes:"";
+						doc.bmfolderid = d?.bmfolderid?d.bmfolderid:"";
 						return doc;
 					})
 					body = histBody.sort((a,b) => b.date - a.date);
@@ -124,7 +126,7 @@ async function getQueryFromId (field, id, org_id){
 
 exports.opendoc = async(req, res, next) => {
 	//update doc history and return OPS Link
-	db._updatehistory(req.auth.payload.sub, req.query.doc_num, status.indexOf("viewed"), (err) => {
+	db._updatehistory(req.auth.payload.sub, req.query.doc_num, req.query.familyid, status.indexOf("viewed"), (err) => {
 		if (err){
 			logger.error(`opendoc: ${msgServerError}: ${err}`);
 			return res.status(500).json({message: `opendoc: ${msgServerError}`});

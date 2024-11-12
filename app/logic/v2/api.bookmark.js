@@ -34,7 +34,7 @@ exports.bookmark = async (req, res) => {
 		}
 	}
 
-	db._updatebookmark(req.auth.payload.sub, req.query.doc_num, bookmark, bmfolderid, status.indexOf("new"), docmetadata, (err) => {
+	db._updatebookmark(req.auth.payload.sub, req.query.doc_num, bookmark, bmfolderid, req.query.familyid, status.indexOf("new"), docmetadata, (err) => {
 		if (err) {
 		logger.error(`bookmark: ${msgServerError}: ${err}`);
 		return res.status(500).json({ message: `bookmark: ${msgServerError}` });
