@@ -113,22 +113,31 @@ module.exports._createuserprofile = async function(uid, next){
 
 }
 
-module.exports._updatehistory = async function(uid, docid, status, next){
+module.exports._updatehistory = async function(uid, docid, familyid, status, next){
   const dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
   dbRequest.input('docid', sql.NVarChar, docid);
+  dbRequest.input('familyid', sql.Int, familyid);
   dbRequest.input('status', sql.Int, status);
   const strQuery = `
-IF EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)  
+BEGIN TRANSACTION
+IF NOT EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)  
 BEGIN  
-	UPDATE dochistory   
-	SET status = 2  
-	WHERE uid = @uid AND docid = @docid;  
-END  
-ELSE  
-BEGIN  
-	  INSERT INTO dochistory (uid, docid, status, bookmark, docmetadata, notes, bmfolderid) VALUES (@uid, @docid, @status, 0, '', '', null)
-END`
+  INSERT INTO dochistory (uid, docid, bookmark, docmetadata, notes, bmfolderid, familyid) VALUES (@uid, @docid, 0, '', '', null, @familyid)	
+END
+
+IF EXISTS (SELECT 1 FROM familyhistory WHERE uid = @uid AND familyid = @familyid)
+BEGIN
+  UPDATE familyhistory
+  SET status = @status
+  WHERE familyid = @familyid AND uid = @uid
+END
+ELSE
+BEGIN
+  INSERT INTO familyhistory (uid, familyid, status) VALUES (@uid, @familyid, @status)
+END
+COMMIT TRANSACTION
+`
   dbRequest.query(strQuery)
     .then(() => {
       next(null);
@@ -138,7 +147,7 @@ END`
     })
 }
 
-module.exports._updatebookmark = async function(uid, docid, bookmark, bmfolderid, status, docmetadata = '', next){
+module.exports._updatebookmark = async function(uid, docid, bookmark, bmfolderid, familyid, docmetadata = '', next){
   const dbRequest = await this.poolrequest();
   // Default bookmark folder id starts always with 00000000-
   // in dochistory table we don't set this bmfolder id, but replace it with null.
@@ -151,8 +160,8 @@ module.exports._updatebookmark = async function(uid, docid, bookmark, bmfolderid
   dbRequest.input('docid', sql.NVarChar, docid);
   dbRequest.input('bookmark', sql.Bit, bookmark);
   dbRequest.input('bmfolderid',sql.VarChar(36), bmfolderid);
-  dbRequest.input('status', sql.Int, status);
   dbRequest.input('docmetadata', sql.NVarChar, docmetadata);
+  dbRequest.input('familyid', sql.Int, familyid);
   const strQuery = `
 DECLARE @actual_bmfolderid VARCHAR(36);
 
@@ -173,7 +182,7 @@ BEGIN
 END  
 ELSE  
 BEGIN  
-	  INSERT INTO dochistory (uid, docid, status, bookmark, docmetadata, notes, bmfolderid) VALUES (@uid, @docid, @status , 1, @docmetadata, '', @actual_bmfolderid)
+	  INSERT INTO dochistory (uid, docid, bookmark, docmetadata, notes, bmfolderid, familyid) VALUES (@uid, @docid, 1, @docmetadata, '', @actual_bmfolderid, @familyid)
 END`
   dbRequest.query(strQuery)
     .then(() => {
@@ -267,15 +276,18 @@ module.exports._gethistory = async function(uid, next){
   dbRequest.input('uid', sql.VarChar(50), uid);
   const strQuery = `
   SELECT
-    docid,
-    status,
-    bookmark,
-    notes,
-    CASE WHEN bmfolderid IS NULL THEN (SELECT bmfolderid FROM bookmarksfolders WHERE LEFT(bmfolderid,8) = '00000000' AND uid = @uid) ELSE bmfolderid END AS bmfolderid
-FROM
-    dochistory 
-WHERE
-    uid = @uid;
+    d.docid,
+    f.status,
+    d.bookmark,
+    d.notes,
+    CASE WHEN d.bmfolderid IS NULL THEN (SELECT bmfolderid FROM bookmarksfolders WHERE LEFT(bmfolderid,8) = '00000000' AND uid = @uid) ELSE d.bmfolderid END AS bmfolderid,
+    d.familyid
+  FROM
+    dochistory d
+  LEFT JOIN
+    familyhistory f ON d.uid = f.uid AND d.familyid = f.familyid
+  WHERE
+    d.uid = @uid;
   `
   dbRequest.query(strQuery)
     .then(dbRequest => {
