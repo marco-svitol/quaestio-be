@@ -24,6 +24,7 @@ exports.search = async(req, res, next) => {
 				if (!err){
 					const histBody = body.map(doc => {
 						let f = null;
+						let d = null;
 						if (history){
 							d = history.find(hdoc => hdoc.docid === doc.doc_num);
 							f = history.find(hdoc => hdoc.familyid == doc.familyid);
@@ -126,6 +127,10 @@ async function getQueryFromId (field, id, org_id){
 
 exports.opendoc = async(req, res, next) => {
 	//update doc history and return OPS Link
+	//TODO: TEMP WORKAROUND while developing
+	if (!req.query.familyid){
+		req.query.familyid = "80738452"
+	}
 	db._updatehistory(req.auth.payload.sub, req.query.doc_num, req.query.familyid, status.indexOf("viewed"), (err) => {
 		if (err){
 			logger.error(`opendoc: ${msgServerError}: ${err}`);
