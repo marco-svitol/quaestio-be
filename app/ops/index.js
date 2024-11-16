@@ -4,6 +4,8 @@ const opsMonitoring=require('./opsFairUseMonitoring.js');
 const rTracer = require('cls-rtracer');
 const opsDocHelper = require('./opsDocHelpers.js');
 const opsImageHelper = require('./opsImageHelper.js');
+const opsTranslatorInstance = require('./opsTranslator');
+
 
 //Authentication Axios instance
 let authParams = new URLSearchParams({grant_type : 'client_credentials'});
@@ -112,18 +114,16 @@ module.exports = class opsService{
     return newAxios;
   }
 
-  async publishedDataSearch(strQuery, next) {
+  async publishedDataSearch(strQuery, userInfo, next) {
     const cachedResult = this.cacheH.nodeCache.get(strQuery);
     if (cachedResult) {
       return next(null, cachedResult.documents, "hit");
     }
-
+  
     try {
-      const result = await opsDocHelper.getAllDocumentsRecurse(strQuery, this.commonAxiosInstance);
+      const result = await opsDocHelper.getAllDocumentsRecurse(strQuery, this.commonAxiosInstance, userInfo);
       result.documents = opsDocHelper.getFamilyOldests(result.documents);
-      if (global.config_data.ops.opsTranslationEnabled){
-        result.documents = await opsDocHelper.translate(result.documents)
-      }
+      result.documents = await opsTranslatorInstance.translateDocs(result.documents, userInfo)
       // Cache the result with the calculated TTL
       this.cacheH.nodeCache.set(strQuery, { documents: result.documents}, this.cacheH.calculateTTL());
 

@@ -20,6 +20,9 @@
             "opsTranslateAbstract": false,
             "opsToLang": "en",
             "opsFriendlyLangs": ["en","it","de","fr"],
+            "opsTranslateMarkPrefix" : "[MT_",
+            "opsTranslateMarkSuffix" : "_TM]",
+            "opsDefaultLang": "en",
             "opsDefPubPrioCrit": "date",
             "quotas" : {
                 "hourly" : "450",
@@ -55,7 +58,8 @@
         "translator" : {
             "azureTranslatorKey" : "",
             "azureTranslatorEndpoint" : "https://api.cognitive.microsofttranslator.com/",
-            "azureTranslatorLocation" : "westeurope"
+            "azureTranslatorLocation" : "westeurope",
+            "machineTranslatedMark" : "[MT]"
         }
     },
     "production": {

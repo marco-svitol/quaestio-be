@@ -20,12 +20,13 @@ const axiosInstance = axios.create({
 
 async function translateText(text, from, to) {
     try {
+        from = validateLanguageCode(from);
         let response = await axiosInstance.post('/translate', [{
             'text': text
         }], {
             params: {
                 'api-version': '3.0',
-                //'from': from,
+                'from': from,
                 'to': to
             }
         });
@@ -35,6 +36,37 @@ async function translateText(text, from, to) {
         throw error;
     }
 }
+
+const languageCodeMap = {
+    'ol': 'ko', // Example mapping
+    // Add more mappings as needed
+};
+
+// List of valid Azure language codes
+const validLanguageCodes = [
+    'af', 'sq', 'am', 'ar', 'hy', 'as', 'az', 'bn', 'ba', 'eu', 'bho', 'brx', 'bs', 'bg', 'yue', 'ca', 'lzh', 'zh-Hans', 'zh-Hant',
+    'sn', 'hr', 'cs', 'da', 'prs', 'dv', 'doi', 'nl', 'en', 'et', 'fo', 'fj', 'fil', 'fi', 'fr', 'fr-ca', 'gl', 'ka', 'de', 'el',
+    'gu', 'ht', 'ha', 'he', 'hi', 'mww', 'hu', 'is', 'ig', 'id', 'ikt', 'iu', 'iu-Latn', 'ga', 'it', 'ja', 'kn', 'ks', 'kk', 'km',
+    'rw', 'tlh-Latn', 'tlh-Piqd', 'gom', 'ko', 'ku', 'kmr', 'ky', 'lo', 'lv', 'lt', 'ln', 'dsb', 'lug', 'mk', 'mai', 'mg', 'ms', 'ml',
+    'mt', 'mi', 'mr', 'mn-Cyrl', 'mn-Mong', 'my', 'ne', 'nb', 'nya', 'or', 'ps', 'fa', 'pl', 'pt', 'pt-pt', 'pa', 'otq', 'ro', 'run',
+    'ru', 'sm', 'sr-Cyrl', 'sr-Latn', 'st', 'nso', 'si', 'sk', 'sl', 'so', 'es', 'sw', 'sv', 'ta', 'te', 'th', 'ti', 'ts', 'tn', 'tr',
+    'tk', 'uk', 'ur', 'ug', 'uz', 'vi', 'cy', 'xh', 'yi', 'yo', 'zu'
+  ];
+
+// Function to validate and convert language codes
+function validateLanguageCode(langCode) {
+    // Convert non-standard code to standard code if mapping exists
+    if (languageCodeMap[langCode]) {
+        return languageCodeMap[langCode];
+    }
+    // Check if the code is valid
+    if (validLanguageCodes.includes(langCode)) {
+        return langCode;
+    }
+    // If invalid, return an empty string to trigger auto-detection
+    return '';
+}
+
 
 module.exports = {
   translateText

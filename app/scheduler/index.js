@@ -23,9 +23,14 @@ bot.scheduleJob("30 3 * * *", function(){
     "PA=(WU AND (EAST OR GUOSHENG OR ((KUO OR GUO) AND (SHEN OR SHENG))))"
   ];
 
+  const botInfo = {
+    "pattodate_translationEnabled": false,
+    "pattodate_translateAbstract": false
+  }
+
   reqQueryList.forEach((reqQuery, index) => {
     setTimeout(() => {
-      opsQuaestio.publishedDataSearch(reqQuery, (err, body, cache) => {
+      opsQuaestio.publishedDataSearch(reqQuery, botInfo, (err, body, cache) => {
         if (!err) {
           logger.info(`BOT publishedDataSearch: query: ${reqQuery} returned ${body.length}  bytes and the cache bit is ${cache}`);
         }else{

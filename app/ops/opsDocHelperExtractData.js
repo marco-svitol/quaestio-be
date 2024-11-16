@@ -1,21 +1,11 @@
 const logger=require('../logger'); 
+const opsTranslatorInstance = require('./opsTranslator');
 
 //helper function for publicationDataFiltered
-function findFieldLang(field, lang) {
+function findFieldLang(field, userInfo) {
+  lang = userInfo.pattodate_defaultOpsLang;
   const f = field.find(d => d['@lang'] === lang);
   return f || field[0];
-}
-
-async function langCheck(field) {
-  let fieldBody = field['$'];
-  const fieldLang = field['@lang'];
-  //const toLang = global.config_data.ops.opsToLang;
-  if (global.config_data.ops.opsFriendlyLangs.indexOf(fieldLang) === -1) {
-    logger.debug(`Adding _MT flag from ${fieldLang}`);
-    fieldBody = `[MT_${fieldLang}_TM]${fieldBody}`;
-  }
-  field['$'] = fieldBody;
-  return field;
 }
 
 function normalizeFields(field) {
@@ -36,17 +26,15 @@ function normalizeFields(field) {
 // introduce translation here?
 // in case we need to have the organization (or user) setting available 
 // with the translation matrix
-async function publicationDataFilteredAsync(body, lang) {
+async function publicationDataFilteredAsync(body, userInfo) {
   const docData = {};
   const docNum = `${body['@country']}${body['@doc-number']}`;
 
   //Title
   if (body['bibliographic-data']['invention-title']){
     const normalizedTitle = normalizeFields(body['bibliographic-data']['invention-title']);
-    langTitle = findFieldLang(normalizedTitle, lang);
-    if (global.config_data.ops.opsTranslationEnabled){
-      langTitle = await langCheck(langTitle);
-    }
+    langTitle = findFieldLang(normalizedTitle, userInfo);
+    langTitle = await opsTranslatorInstance.titleLangCheck(langTitle, userInfo);
     docData.title = langTitle['$'];
   }else{
     logger.warn(`publicationDataFilteredAsync: missing Title in doc n.${docNum}`);
@@ -69,10 +57,8 @@ async function publicationDataFilteredAsync(body, lang) {
   // Abstract: check if 'body['abstract']' exists before attempting to access its properties
   if (body['abstract']) {
     const normalizedAbstract = normalizeFields(body['abstract']);
-    langAbstract = findFieldLang(normalizedAbstract, lang);
-    if (global.config_data.ops.opsTranslationEnabled && global.config_data.ops.opsTranslateAbstract){
-      langAbstract = await langCheck(langAbstract);
-    }
+    langAbstract = findFieldLang(normalizedAbstract, userInfo);
+    langAbstract = await opsTranslatorInstance.abstractLangCheck(langAbstract, userInfo);
     docData.abstract = langAbstract['$'];
   } else {
     docData.abstract = ' -- ';

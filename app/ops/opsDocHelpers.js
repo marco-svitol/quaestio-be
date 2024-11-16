@@ -2,7 +2,6 @@ const logger=require('../logger');
 const opsDOCURL = global.config_data.ops.opsDocURL;
 const opsDoceHelperParse = require('./opsDocHelperParse');
 const opsDoceHelperExtractData = require('./opsDocHelperExtractData');
-const { translateText } = require('../translator');
 
 //Fetch document metadata
 function getDocInfo(opsPublication){
@@ -34,7 +33,7 @@ function getLinkFromDocIdHelper(docNum){
   return `${opsDOCURL}/familyid/publication/${docNum}?q=pn%3D${docNum}`;
 }
 
-async function getAllDocumentsRecurse(strQuery, commonAxiosInstance, pageStart = 1, pageEnd = 100, allDocs = []) {
+async function getAllDocumentsRecurse(strQuery, commonAxiosInstance, userInfo, pageStart = 1, pageEnd = 100, allDocs = []) {
   try {
     const range = `${pageStart}-${pageEnd}`;
     const queryUrl = `/rest-services/published-data/search/biblio?q=${strQuery}&Range=${range}`;
@@ -50,7 +49,7 @@ async function getAllDocumentsRecurse(strQuery, commonAxiosInstance, pageStart =
       const docInfo = getDocInfo(opsPublication);
       const docUrl = getLinkFromDocIdHelper(docInfo["docNum"]);
 
-      const docData = await opsDoceHelperExtractData.publicationDataFilteredAsync(opsPublication, "en");
+      const docData = await opsDoceHelperExtractData.publicationDataFilteredAsync(opsPublication, userInfo);
 
       filteredDocs.push({
         "doc_num": docInfo["docNum"],
@@ -74,7 +73,7 @@ async function getAllDocumentsRecurse(strQuery, commonAxiosInstance, pageStart =
 
     if (nextPageStart <= patentServiceResponseParsed.opsResultsInfo.total_count && nextPageStart <= global.config_data.ops.opsMaxResults) {
       // Recursively call the function with the next page range
-      return getAllDocumentsRecurse(strQuery, commonAxiosInstance, nextPageStart, nextPageEnd, allDocs);
+      return getAllDocumentsRecurse(strQuery, commonAxiosInstance, userInfo, nextPageStart, nextPageEnd, allDocs);
     }
 
     // Return all documents
@@ -151,35 +150,8 @@ function getFamilyOldests(opsPublications) {
   return arrayFamilies;
 }
 
-async function translate(opsPublications) {
-  const toLang = global.config_data.ops.opsToLang;
-  const langPrefix = "[MT_";
-  const langSuffix = "_TM]";
-
-  const translateField = async (text, fieldName) => {
-    const startIndex = text.indexOf(langPrefix) + langPrefix.length;
-    const endIndex = text.indexOf(langSuffix);
-    if (startIndex > -1 && endIndex > -1 && startIndex < endIndex) {
-      const langFrom = text.substring(startIndex, endIndex);
-      logger.debug(`translate: translating ${fieldName} from ${langFrom} to ${toLang}`);
-      const translatedText = await translateText(text.substring(endIndex + langSuffix.length), langFrom, toLang);
-      return `[MT]${translatedText}`;
-    }
-    return text;
-  };
-
-  const translatedPublications = await Promise.all(opsPublications.map(async element => {
-    element['invention_title'] = await translateField(element['invention_title'], 'title');
-    element['abstract'] = await translateField(element['abstract'], 'abstract');
-    return element;
-  }));
-
-  return translatedPublications;
-}
-
 module.exports = {
   getFamilyOldests,
   getAllDocumentsRecurse,
-  getLinkFromDocIdHelper,
-  translate
+  getLinkFromDocIdHelper
 }

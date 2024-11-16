@@ -18,7 +18,7 @@ exports.bookmark = async (req, res) => {
 		bookmark = 1;
 		try {
 		docmetadata = await new Promise((resolve, reject) => {
-			opsQuaestio.publishedDataSearch(`pn=${req.query.doc_num}`, (err, body) => {
+			opsQuaestio.publishedDataSearch(`pn=${req.query.doc_num}`, req.auth.userInfo, (err, body) => {
 				if (!err) {
 					resolve(JSON.stringify(body[0]));
 				} else {

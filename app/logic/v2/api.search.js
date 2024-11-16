@@ -17,7 +17,7 @@ exports.search = async(req, res, next) => {
 
 	logger.debug(reqQuery);
 	
-	opsQuaestio.publishedDataSearch(reqQuery, (err, body, cache) => {
+	opsQuaestio.publishedDataSearch(reqQuery, req.auth.userInfo, (err, body, cache) => {
 		if (!err) {
 			logger.debug(`publishedDataSearch: total filtered and grouped by family: ${body.length}`);
 			db._gethistory(req.auth.payload.sub, (err, history) => { 
