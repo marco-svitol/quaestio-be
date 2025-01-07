@@ -39,8 +39,7 @@ async function translateText(text, from, to) {
             }
         });
         const translation = response.data[0].translations[0].text
-        //TODO:Expire time for translator
-        nodeCache.set(cacheKey, translation, global.config_data.cache.auth0UserInfoCacheTTLSeconds);
+        nodeCache.set(cacheKey, translation, 0);
         return translation;
     } catch (error) {
         logger.error(`Error translating text: ${error}`);

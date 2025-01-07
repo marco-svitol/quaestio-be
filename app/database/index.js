@@ -359,11 +359,10 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
   const strQuery = `
   WITH CTE AS (
     SELECT 
-        docid,
+        familyid,
         CASE WHEN docmetadata = '' THEN '{"doc_num": "' + docid +'", "type": "", "familyid": "", "country": "", "invention_title": "' + docid +'", "date": "", "abstract": "", "applicant": "", "inventor_name": "", "ops_link": ""}' ELSE docmetadata END AS docmetadata,
-        status,
+        docid,
         bookmark,
-        notes,
         bmfolderid
     FROM 
         dochistory 
@@ -382,9 +381,9 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
     JSON_VALUE(docmetadata, '$.applicant') AS applicant,
     JSON_VALUE(docmetadata, '$.inventor_name') AS inventor_name,
     JSON_VALUE(docmetadata, '$.ops_link') AS ops_link,
-    status as read_history,
+    (SELECT status from familyhistory where CTE.familyid = familyid) as read_history,
+    (SELECT notes from familyhistory where CTE.familyid = familyid) as notes,
     bookmark,
-    notes,
     CASE WHEN bmfolderid IS NULL 
         THEN (
           SELECT bmfolderid FROM bookmarksfolders WHERE LEFT(bmfolderid,8) = '00000000' AND uid = @uid

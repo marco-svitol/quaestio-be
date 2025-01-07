@@ -2,7 +2,6 @@ const logger=require('../../logger');
 const msgServerError = require('../../consts').msgServerError;
 const db=require('../../database');
 const status = ["new", "listed", "viewed"];
-//TODO: migrateto familyid
 exports.notes = async (req, res) => {
     const notes = req.query.notes ? req.query.notes : "";
     db._updatenotes(req.auth.payload.sub, req.query.familyid, notes, status.indexOf("new"), (err) => {
