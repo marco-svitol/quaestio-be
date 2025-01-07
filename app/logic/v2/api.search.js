@@ -20,19 +20,20 @@ exports.search = async(req, res, next) => {
 	opsQuaestio.publishedDataSearch(reqQuery, req.auth.userInfo, (err, body, cache) => {
 		if (!err) {
 			logger.debug(`publishedDataSearch: total filtered and grouped by family: ${body.length}`);
-			db._gethistory(req.auth.payload.sub, (err, history) => { 
+			db._gethistory(req.auth.payload.sub, (err, familyhistory, dochistory) => { 
 				if (!err){
 					const histBody = body.map(doc => {
 						let f = null;
 						let d = null;
-						if (history){
-							d = history.find(hdoc => hdoc.docid === doc.doc_num);
-							f = history.find(hdoc => hdoc.familyid == doc.familyid);
+						if (familyhistory){
+							f = familyhistory.find(hdoc => hdoc.familyid == doc.familyid);
 						}
-
+						if (dochistory){
+							d = dochistory.find(hdoc => hdoc.docid === doc.doc_num);
+						}
 						doc.read_history = f?.status?status[f.status]:status[0];
 						doc.bookmark = d?.bookmark?d.bookmark:false;
-						doc.notes = d?.notes?d.notes:"";
+						doc.notes = f?.notes?f.notes:"";
 						doc.bmfolderid = d?.bmfolderid?d.bmfolderid:"";
 						return doc;
 					})
@@ -127,10 +128,6 @@ async function getQueryFromId (field, id, org_id){
 
 exports.opendoc = async(req, res, next) => {
 	//update doc history and return OPS Link
-	//TODO: TEMP WORKAROUND while developing
-	if (!req.query.familyid){
-		req.query.familyid = "80738452"
-	}
 	db._updatehistory(req.auth.payload.sub, req.query.doc_num, req.query.familyid, status.indexOf("viewed"), (err) => {
 		if (err){
 			logger.error(`opendoc: ${msgServerError}: ${err}`);

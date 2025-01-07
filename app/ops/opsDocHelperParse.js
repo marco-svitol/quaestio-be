@@ -38,6 +38,13 @@ function parsePatentServiceResponse(response) {
   };
 }
 
+function parseFamilyIdFromDocId(responseData) {
+  let families = responseData['ops:world-patent-data']['ops:patent-family']['ops:family-member'];
+  families = Array.isArray(families) ? families : [families];
+  return families[0]['@family-id'];
+}
+
 module.exports = {
-  parsePatentServiceResponse
+  parsePatentServiceResponse,
+  parseFamilyIdFromDocId
 }

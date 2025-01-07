@@ -123,7 +123,7 @@ module.exports._updatehistory = async function(uid, docid, familyid, status, nex
 BEGIN TRANSACTION
 IF NOT EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)  
 BEGIN  
-  INSERT INTO dochistory (uid, docid, bookmark, docmetadata, notes, bmfolderid, familyid) VALUES (@uid, @docid, 0, '', '', null, @familyid)	
+  INSERT INTO dochistory (uid, docid, bookmark, docmetadata, bmfolderid, familyid) VALUES (@uid, @docid, 0, '', null, @familyid)	
 END
 
 IF EXISTS (SELECT 1 FROM familyhistory WHERE uid = @uid AND familyid = @familyid)
@@ -182,7 +182,7 @@ BEGIN
 END  
 ELSE  
 BEGIN  
-	  INSERT INTO dochistory (uid, docid, bookmark, docmetadata, notes, bmfolderid, familyid) VALUES (@uid, @docid, 1, @docmetadata, '', @actual_bmfolderid, @familyid)
+	  INSERT INTO dochistory (uid, docid, bookmark, docmetadata, bmfolderid, familyid) VALUES (@uid, @docid, 1, @docmetadata, @actual_bmfolderid, @familyid)
 END`
   dbRequest.query(strQuery)
     .then(() => {
@@ -193,22 +193,22 @@ END`
     })
 }
 
-module.exports._updatenotes = async function(uid, docid, notes, status, next){
+module.exports._updatenotes = async function(uid, familyid, notes, status, next){
   const dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
-  dbRequest.input('docid', sql.NVarChar, docid);
+  dbRequest.input('familyid', sql.Int, familyid);
   dbRequest.input('status', sql.Int, status);
   dbRequest.input('notes', sql.NVarChar, notes);
   const strQuery = `
-IF EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)  
+IF EXISTS (SELECT 1 FROM familyhistory WHERE uid = @uid AND familyid = @familyid)  
   BEGIN
-    UPDATE dochistory   
+    UPDATE familyhistory   
     SET notes = @notes
-    WHERE uid = @uid AND docid = @docid;  
+    WHERE uid = @uid AND familyid = @familyid;  
   END  
   ELSE  
   BEGIN  
-      INSERT INTO dochistory (uid, docid, status, bookmark, docmetadata, notes, bmfolderid) VALUES (@uid, @docid, @status , 0, '', @notes, null)
+      INSERT INTO familyhistory (uid, familyid, status, notes) VALUES (@uid, @familyid, @status, @notes)
   END
 `
   dbRequest.query(strQuery)
@@ -276,27 +276,36 @@ module.exports._gethistory = async function(uid, next){
   dbRequest.input('uid', sql.VarChar(50), uid);
   const strQuery = `
   SELECT
-    d.docid,
-    f.status,
+	  f.familyid,
+	  f.status,
+	  f.notes
+  FROM
+	  familyhistory f
+  WHERE
+    f.uid = @uid;
+
+  SELECT
+	  d.docid,
     d.bookmark,
-    d.notes,
-    CASE WHEN d.bmfolderid IS NULL THEN (SELECT bmfolderid FROM bookmarksfolders WHERE LEFT(bmfolderid,8) = '00000000' AND uid = @uid) ELSE d.bmfolderid END AS bmfolderid,
-    d.familyid
+    CASE 
+      WHEN d.bmfolderid IS NULL THEN 
+        (SELECT bmfolderid 
+        FROM bookmarksfolders 
+        WHERE LEFT(bmfolderid,8) = '00000000' 
+          AND uid = @uid) 
+      ELSE 
+        d.bmfolderid 
+      END AS bmfolderid
   FROM
     dochistory d
-  LEFT JOIN
-    familyhistory f ON d.uid = f.uid AND d.familyid = f.familyid
   WHERE
     d.uid = @uid;
   `
   dbRequest.query(strQuery)
     .then(dbRequest => {
-      let rows = dbRequest.recordset;
-      if (rows.length > 0){
-          next(null, rows);
-      }else{
-        next(null,null);
-      }
+      let familyHistory = dbRequest.recordsets[0].length > 0 ? dbRequest.recordsets[0] : null;
+      let docHistory = dbRequest.recordsets[1].length > 0 ? dbRequest.recordsets[1] : null;
+      next(null,familyHistory, docHistory);
     })
     .catch(err => {
       next(err,null);

@@ -47,7 +47,7 @@ module.exports.getIdentityInfoMiddleware = function(req, res, next) {
         userInfo.pattodate_friendlyLangs = (userInfo.pattodate_friendlyLangs != null) ? userInfo.pattodate_friendlyLangs : global.config_data.ops.opsFriendlyLangs;
         userInfo.pattodate_defaultOpsLang = (userInfo.pattodate_defaultOpsLang != null) ? userInfo.pattodate_defaultOpsLang : global.config_data.ops.opsDefaultLang;
         // Store the user information in the cache with TTL
-        nodeCache.set(cacheKey, userInfo, {stdTTL: global.config_data.cache.auth0UserInfoCacheTTLSeconds});
+        nodeCache.set(cacheKey, userInfo, global.config_data.cache.auth0UserInfoCacheTTLSeconds);
         req.auth.userInfo = userInfo ;
         next();
     })
