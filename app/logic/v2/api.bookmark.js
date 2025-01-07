@@ -4,7 +4,6 @@ const opsQuaestio = require("../../consts").opsQuaestio;
 const db=require('../../database');
 const status = ["new", "listed", "viewed"];
 const utils=require('../../utils');
-const { cacheHandler } = require('../../consts/cache');
 const cacheH = require("../../consts/cache").cacheHandler;
 
 exports.bookmark = async (req, res) => {
@@ -15,6 +14,7 @@ exports.bookmark = async (req, res) => {
 	//Check if bmfolderid and then bookmark = 1
 	if (utils.isCID(req.query.bookmark)){
 		bmfolderid = req.query.bookmark;
+		familyid = req.query.familyid;
 		bookmark = 1;
 		try {
 		docmetadata = await new Promise((resolve, reject) => {
@@ -34,7 +34,7 @@ exports.bookmark = async (req, res) => {
 		}
 	}
 
-	db._updatebookmark(req.auth.payload.sub, req.query.doc_num, bookmark, bmfolderid, req.query.familyid, docmetadata, (err) => {
+	db._updatebookmark(req.auth.payload.sub, req.query.doc_num, bookmark, bmfolderid, familyid, docmetadata, (err) => {
 		if (err) {
 		logger.error(`bookmark: ${msgServerError}: ${err}`);
 		return res.status(500).json({ message: `bookmark: ${msgServerError}` });

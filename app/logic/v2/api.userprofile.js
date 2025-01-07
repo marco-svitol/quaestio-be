@@ -13,6 +13,7 @@ exports.userprofile = async(req, res, next) => {
 			res.locals.cache = 'hit';
 			res.locals.status = 200;
 			res.locals.body = cachedResult;
+			return next();
 		}
 		const qResult = await db._userprofile(req.auth.payload.sub, req.auth.userInfo.pattodate_org_id);
 		if (qResult?.userprofile?.length > 0){

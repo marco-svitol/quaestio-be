@@ -1,9 +1,11 @@
 const logger = require('../logger');
 const axios = require('axios').default;
 const { v4: uuidv4 } = require('uuid');
+nodeCache = require("../consts/cache").cacheHandler.nodeCache;
 let key = global.config_data.translator.azureTranslatorKey;
 let endpoint = global.config_data.translator.azureTranslatorEndpoint;
 let location = global.config_data.translator.azureTranslatorLocation;
+const crypto = require('crypto');
 
 // Static axios instance
 const axiosInstance = axios.create({
@@ -20,6 +22,12 @@ const axiosInstance = axios.create({
 
 async function translateText(text, from, to) {
     try {
+        const cacheKey = generateTranslatorCacheKey(text, from, to)
+        const cachedTranslation = nodeCache.get(cacheKey);
+        if (cachedTranslation !== undefined) {
+            return cachedTranslation;
+        }
+
         from = validateLanguageCode(from);
         let response = await axiosInstance.post('/translate', [{
             'text': text
@@ -30,17 +38,15 @@ async function translateText(text, from, to) {
                 'to': to
             }
         });
-        return response.data[0].translations[0].text;
+        const translation = response.data[0].translations[0].text
+        //TODO:Expire time for translator
+        nodeCache.set(cacheKey, translation, global.config_data.cache.auth0UserInfoCacheTTLSeconds);
+        return translation;
     } catch (error) {
         logger.error(`Error translating text: ${error}`);
         throw error;
     }
 }
-
-const languageCodeMap = {
-    'ol': 'ko', // Example mapping
-    // Add more mappings as needed
-};
 
 // List of valid Azure language codes
 const validLanguageCodes = [
@@ -55,10 +61,6 @@ const validLanguageCodes = [
 
 // Function to validate and convert language codes
 function validateLanguageCode(langCode) {
-    // Convert non-standard code to standard code if mapping exists
-    if (languageCodeMap[langCode]) {
-        return languageCodeMap[langCode];
-    }
     // Check if the code is valid
     if (validLanguageCodes.includes(langCode)) {
         return langCode;
@@ -67,6 +69,13 @@ function validateLanguageCode(langCode) {
     return '';
 }
 
+function generateShortMD5(text) {
+    return crypto.createHash('md5').update(text).digest('hex').slice(0, 10);
+}
+
+function generateTranslatorCacheKey(text, from, to){
+    return `${generateShortMD5(text)}_${from}_${to}`
+}
 
 module.exports = {
   translateText

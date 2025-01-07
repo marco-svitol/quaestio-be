@@ -150,8 +150,25 @@ function getFamilyOldests(opsPublications) {
   return arrayFamilies;
 }
 
+function fetchFamilyIdFromDocId(commonAxiosInstance, docId){
+  return new Promise((resolve, reject) => {
+    const queryUrl = `/rest-services/family/publication/docdb/${docId}`;
+    commonAxiosInstance.get(queryUrl)
+    .then(response => {
+      const familyId = opsDoceHelperParse.parseFamilyIdFromDocId(response.data);
+      resolve(familyId);
+    })
+    .catch(err => {
+      logger.error(`fetchFamilyIdFromDocId: ${err.message}`);
+      reject(err);
+    });
+  });
+}
+
 module.exports = {
   getFamilyOldests,
   getAllDocumentsRecurse,
-  getLinkFromDocIdHelper
+  getLinkFromDocIdHelper,
+  //TODO: temporary until familyId is passed from FE
+  fetchFamilyIdFromDocId
 }

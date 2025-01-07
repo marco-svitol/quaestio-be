@@ -21,6 +21,8 @@ module.exports = myapp => {
   const { validateAccessTokenMiddleWare, getIdentityInfoMiddleware } = require("../identity/auth0.middleware.js");
 
   const expressMiddleware = require("../express/header.middleware.js");
+  //TODO: temporary middleware
+  const opsMiddleware = require("../ops/opsMiddleware.js");
 
   validateAccessTokenMiddleWare.unless = unless;
   routerapp.use(validateAccessTokenMiddleWare.unless({
@@ -43,14 +45,15 @@ module.exports = myapp => {
   routerapp.get("/v2/version", apitest.version);
   //protected
   routerapp.get("/v2/opstest", apitest.opstest);
-  routerapp.get("/v2/opendoc", apisearchv2.opendoc, expressMiddleware.setCustomHeaders, expressMiddleware.sendRes);
-  routerapp.patch("/v2/bookmark", apibookmark.bookmark);
+  //TODO: temporary adding middleware to opendoc to retrieve familyid, before is passed from FE
+  routerapp.get("/v2/opendoc", opsMiddleware.getFamilyIdFromDocIdMiddleware, apisearchv2.opendoc, expressMiddleware.setCustomHeaders, expressMiddleware.sendRes);
+  routerapp.patch("/v2/bookmark", opsMiddleware.getFamilyIdFromDocIdMiddleware, apibookmark.bookmark);
   routerapp.post("/v2/bmfolder", apibookmark.bmfolder);
   routerapp.get("/v2/firstpageClipping", apisearchv2.firstpageClipping);
   routerapp.get("/v2/search", apisearchv2.search, expressMiddleware.setCustomHeaders, expressMiddleware.sendRes );
   routerapp.get("/v2/userprofile", apiuserprofile.userprofile, expressMiddleware.setCustomHeaders, expressMiddleware.sendRes );
   routerapp.get("/v2/searchbookmark", apibookmark.searchbookmark);
-  routerapp.patch("/v2/notes", apinotes.notes);
+  routerapp.patch("/v2/notes", opsMiddleware.getFamilyIdFromDocIdMiddleware, apinotes.notes);
   routerapp.patch("/v2/changepassword", apiidentity.changepassword);
   routerapp.delete("/v2/cachereset", apicache.cacheReset);
   routerapp.get("/v2/cachestats", apicache.cacheStats);
