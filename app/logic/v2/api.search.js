@@ -17,7 +17,7 @@ exports.search = async(req, res, next) => {
 
 	logger.debug(reqQuery);
 	
-	opsQuaestio.publishedDataSearch(reqQuery, req.auth.userInfo, (err, body, cache) => {
+	opsQuaestio.publishedDataSearch(reqQuery, req.auth.userInfo, (err, body, cacheHit) => {
 		if (!err) {
 			logger.debug(`publishedDataSearch: total filtered and grouped by family: ${body.length}`);
 			db._gethistory(req.auth.payload.sub, (err, familyhistory, dochistory) => { 
@@ -39,7 +39,7 @@ exports.search = async(req, res, next) => {
 					})
 					body = histBody.sort((a,b) => b.date - a.date);
 					
-					res.locals.cache = cache;
+					res.locals.cacheHit = cacheHit;
 					res.locals.status = 200;
 					res.locals.body = body;
 
@@ -110,14 +110,13 @@ async function buildQuery(query, orgId) {
 };
 
 async function getQueryFromId (field, id, org_id){
-	cacheKey = `${field}|${id}|${org_id}`;
 	try{
-		const cachedResult = cacheH.nodeCache.get(cacheKey);
+		const cachedResult = cacheH.getCacheQuery(`${field}|${id}|${org_id}`);
 		if (cachedResult){
 			return cachedResult;
 		}
 		const result = await db._getQuery(field, id, org_id);
-		cacheH.nodeCache.set(cacheKey, result, cacheH.calculateTTL());
+		cacheH.setCacheQuery(`${field}|${id}|${org_id}`, result);
 		return result;
 	}
 	catch(err){
@@ -126,24 +125,51 @@ async function getQueryFromId (field, id, org_id){
 	}
 }
 
-exports.opendoc = async(req, res, next) => {
-	//update doc history and return OPS Link
-	db._updatehistory(req.auth.payload.sub, req.query.doc_num, req.query.familyid, status.indexOf("viewed"), (err) => {
-		if (err){
-			logger.error(`opendoc: ${msgServerError}: ${err}`);
-			return res.status(500).json({message: `opendoc: ${msgServerError}`});
-		}else{
-			//retrieve link to firstpageClipping
-			const opslink = opsQuaestio.getLinkFromDocId(req.query.doc_num);
-			opsQuaestio.getImagesLinksFromDocId((req.query.doc_num), (imagesLinks, cache) => {
-				res.locals.cache = cache;
-				res.locals.status = 200
-				res.locals.body = {ops_link: opslink, images_links: imagesLinks ? imagesLinks : ""}
-				return next();
-			})
-		}
-	})
-}
+// exports.opendoc = async(req, res, next) => {
+// 	//update doc history and return OPS Link
+// 	db._updatehistory(req.auth.payload.sub, req.query.doc_num, req.query.familyid, status.indexOf("viewed"), (err) => {
+// 		if (err){
+// 			logger.error(`opendoc: ${msgServerError}: ${err}`);
+// 			return res.status(500).json({message: `opendoc: ${msgServerError}`});
+// 		}else{
+// 			//retrieve link to firstpageClipping
+// 			const opslink = opsQuaestio.getLinkFromDocId(req.query.doc_num);
+// 			opsQuaestio.getImagesLinksFromDocId((req.query.doc_num), (imagesLinks, cacheHit) => {
+// 				res.locals.cacheHit = cacheHit;
+// 				res.locals.status = 200
+// 				res.locals.body = {ops_link: opslink, images_links: imagesLinks ? imagesLinks : ""}
+// 				return next();
+// 			})
+// 		}
+// 	})
+// }
+exports.opendoc = async (req, res, next) => {
+	try {
+		//TODO: to be removed after docStatus is ready
+		await new Promise((resolve, reject) => {
+			db._docStatus(req.auth.payload.sub, req.query.familyid, status.indexOf("viewed"), (err) => {
+			//db._updatehistory(req.auth.payload.sub, req.query.doc_num, req.query.familyid, status.indexOf("viewed"), (err) => {
+				if (err) {
+					logger.error(`opendoc: ${msgServerError}: ${err}`);
+					reject(err);
+				} else {
+					resolve();
+				}
+			});
+		});
+
+		//retrieve link to firstpageClipping
+		const opslink = opsQuaestio.getLinkFromDocId(req.query.doc_num);
+		opsQuaestio.getImagesLinksFromDocId(req.query.doc_num, (imagesLinks, cacheHit) => {
+			res.locals.cacheHit = cacheHit;
+			res.locals.status = 200;
+			res.locals.body = { ops_link: opslink, images_links: imagesLinks ? imagesLinks : "" };
+			return next();
+		});
+	} catch (error) {
+		return res.status(500).json({ message: `opendoc: ${msgServerError}` });
+	}
+};
 
 exports.firstpageClipping = async(req, res) => {
 	const fpcImage = req.query.fpcImage;
@@ -161,95 +187,13 @@ exports.firstpageClipping = async(req, res) => {
 	})
 } 
 
-
-
-
-
-
-
-
-
-/*
-const search = async (req, res, next) => {
-  try {
-    const reqQuery = await buildQuery(req.query, req.auth.userInfo.pattodate_org_id);
-    
-    if (!reqQuery) {
-      logger.warn('search: The query for OPS is empty: nothing to search.');
-      return res.status(200).send({});
-    }
-    
-    logger.debug(reqQuery);
-    
-    const { body, cache } = await new Promise((resolve, reject) => {
-      opsQuaestio.publishedDataSearch(reqQuery, (err, body, cache) => {
-        if (err) reject(err);
-        else resolve({ body, cache });
-      });
-    });
-
-    const history = await getHistory(req.auth.payload.sub);
-
-    const processedBody = processBody(body, history);
-
-    res.locals.cache = cache;
-    res.locals.status = 200;
-    res.locals.body = processedBody;
-    next();
-  } catch (err) {
-    handleError(err, res);
-  }
-};
-
-const getHistory = async (userId) => {
-  return new Promise((resolve, reject) => {
-    db._gethistory(userId, (err, history) => {
-      if (err) reject(err);
-      else resolve(history);
-    });
-  });
-};
-
-const processBody = (body, history) => {
-  return body.map(doc => {
-    if (history) {
-      const f = history.find(hdoc => hdoc.docid === doc.doc_num);
-      doc.read_history = f?.status ? status[f.status] : status[0];
-      doc.bookmark = f?.bookmark ? f.bookmark : false;
-      doc.notes = f?.notes ? f.notes : "";
-      doc.bmfolderid = f?.bmfolderid ? f.bmfolderid : "";
-    }
-    return doc;
-  }).sort((a, b) => b.date - a.date);
-};
-
-const handleError = (err, res) => {
-  let error = {
-    status: null,
-    message: ''
-  };
-
-  if (err?.response?.status === 403 && err?.response?.data) {
-    error.status = 503;
-    const OPSError = utils.parseOPSErrorXML(err.response.data);
-    if (OPSError.isOPSError) {
-      error.message = {
-        "OPS_HTTP_STATUS": 403,
-        "OPS_CODE": OPSError.code,
-        "OPS_MESSAGE": OPSError.message
-      };
-    } else {
-      error.message = {
-        "HTTP_STATUS": 403,
-        "MESSAGE": err.message
-      };
-    }
-  } else {
-    error.status = 500;
-    error.message = err.message;
-  }
-
-  logger.error(`publishedDataSearch: Status: ${error.status}. Message: ${JSON.stringify(error.message)}`);
-  res.status(error.status).json({ message: error.message });
-};
-*/
+exports.docStatus = async(req, res) => {
+	db._docStatus(req.auth.payload.sub, req.query.familyid, status.indexOf(req.query.status), (err) => {
+		if (err) {
+			logger.error(`docStatus: ${msgServerError}: ${err}`);
+			return res.status(500).json({ message: `docStatus: ${msgServerError}` });
+		} else {
+			return res.status(200).json({ message: 'ok'});
+		}
+	});
+} 

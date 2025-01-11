@@ -1,7 +1,7 @@
 const logger = require('../logger');
 const axios = require('axios').default;
 const { v4: uuidv4 } = require('uuid');
-nodeCache = require("../consts/cache").cacheHandler.nodeCache;
+const cacheH = require("../consts/cache").cacheHandler;
 let key = global.config_data.translator.azureTranslatorKey;
 let endpoint = global.config_data.translator.azureTranslatorEndpoint;
 let location = global.config_data.translator.azureTranslatorLocation;
@@ -22,9 +22,9 @@ const axiosInstance = axios.create({
 
 async function translateText(text, from, to) {
     try {
-        const cacheKey = generateTranslatorCacheKey(text, from, to)
-        const cachedTranslation = nodeCache.get(cacheKey);
-        if (cachedTranslation !== undefined) {
+        const translatorCacheKey = generateTranslatorCacheKey(text, from, to)
+        const cachedTranslation = cacheH.getCacheTranslator(translatorCacheKey);
+        if (cachedTranslation) {
             return cachedTranslation;
         }
 
@@ -39,7 +39,7 @@ async function translateText(text, from, to) {
             }
         });
         const translation = response.data[0].translations[0].text
-        nodeCache.set(cacheKey, translation, 0);
+        cacheH.setCacheTranslator(translatorCacheKey, translation);
         return translation;
     } catch (error) {
         logger.error(`Error translating text: ${error}`);

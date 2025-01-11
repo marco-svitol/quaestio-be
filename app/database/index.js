@@ -113,19 +113,47 @@ module.exports._createuserprofile = async function(uid, next){
 
 }
 
-module.exports._updatehistory = async function(uid, docid, familyid, status, next){
+// module.exports._updatehistory = async function(uid, docid, familyid, status, next){
+//   const dbRequest = await this.poolrequest();
+//   dbRequest.input('uid', sql.VarChar(50), uid);
+//   dbRequest.input('docid', sql.NVarChar, docid);
+//   dbRequest.input('familyid', sql.Int, familyid);
+//   dbRequest.input('status', sql.Int, status);
+//   const strQuery = `
+// BEGIN TRANSACTION
+// IF NOT EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)  
+// BEGIN  
+//   INSERT INTO dochistory (uid, docid, bookmark, docmetadata, bmfolderid, familyid) VALUES (@uid, @docid, 0, '', null, @familyid)	
+// END
+
+// IF EXISTS (SELECT 1 FROM familyhistory WHERE uid = @uid AND familyid = @familyid)
+// BEGIN
+//   UPDATE familyhistory
+//   SET status = @status
+//   WHERE familyid = @familyid AND uid = @uid
+// END
+// ELSE
+// BEGIN
+//   INSERT INTO familyhistory (uid, familyid, status) VALUES (@uid, @familyid, @status)
+// END
+// COMMIT TRANSACTION
+// `
+//   dbRequest.query(strQuery)
+//     .then(() => {
+//       next(null);
+//     })
+//     .catch(err => {
+//       next(err);
+//     })
+// }
+
+module.exports._docStatus = async function(uid, familyid, status, next){
   const dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);
-  dbRequest.input('docid', sql.NVarChar, docid);
   dbRequest.input('familyid', sql.Int, familyid);
   dbRequest.input('status', sql.Int, status);
   const strQuery = `
 BEGIN TRANSACTION
-IF NOT EXISTS (SELECT 1 FROM dochistory WHERE uid = @uid AND docid = @docid)  
-BEGIN  
-  INSERT INTO dochistory (uid, docid, bookmark, docmetadata, bmfolderid, familyid) VALUES (@uid, @docid, 0, '', null, @familyid)	
-END
-
 IF EXISTS (SELECT 1 FROM familyhistory WHERE uid = @uid AND familyid = @familyid)
 BEGIN
   UPDATE familyhistory
@@ -410,6 +438,36 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
   .catch(err => {
     next(err,null);
   })
+}
+
+// This function will get an object cacheEntries with the following structure:
+// {cachekey: 'key', cachevalue: 'value'}
+// This function will update the cache on the MSSQL database
+module.exports._updateTranslatorCache = async function(translatorCache){
+  const dbRequest = await this.poolrequest();
+  const strQuery = `
+  MERGE INTO translator_cache AS target
+  ${Object.keys(translatorCache).map((key, index) => {
+    dbRequest.input(`cache_key_${index}`, sql.VarChar(50), key);
+    dbRequest.input(`cache_value_${index}`, sql.NVarChar, translatorCache[key]);
+    return `
+    USING (SELECT @cache_key_${index} AS cache_key, @cache_value_${index} AS cache_value) AS source_${index}
+    ON target.cache_key = source_${index}.cache_key
+    WHEN MATCHED THEN
+        UPDATE SET cache_value = source_${index}.cache_value
+    WHEN NOT MATCHED THEN
+        INSERT (cache_key, cache_value)
+        VALUES (source_${index}.cache_key, source_${index}.cache_value);
+    `;
+  }).join('')}
+  `
+  dbRequest.query(strQuery)
+    .then(() => {
+      return;
+    })
+    .catch(err => {
+      return;
+    })
 }
 
 function validateDateBookmark(fromField, toField){

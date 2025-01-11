@@ -115,9 +115,10 @@ module.exports = class opsService{
   }
 
   async publishedDataSearch(strQuery, userInfo, next) {
-    const cachedResult = this.cacheH.nodeCache.get(strQuery);
+    
+    const cachedResult = this.cacheH.getCacheDocSearch(strQuery);
     if (cachedResult) {
-      return next(null, cachedResult.documents, "hit");
+      return next(null, cachedResult.documents, true);
     }
   
     try {
@@ -125,7 +126,7 @@ module.exports = class opsService{
       result.documents = opsDocHelper.getFamilyOldests(result.documents);
       result.documents = await opsTranslatorInstance.translateDocs(result.documents, userInfo)
       // Cache the result with the calculated TTL
-      this.cacheH.nodeCache.set(strQuery, { documents: result.documents}, this.cacheH.calculateTTL());
+      this.cacheH.setCacheDocSearch(strQuery, { documents: result.documents});
 
       return next(null, result.documents);
     } catch (err) {
@@ -142,11 +143,10 @@ module.exports = class opsService{
   }
 
   async getImagesLinksFromDocId(docid, next) {
-    const cacheKey = `getImagesLinksFromDocId|${docid}`;
-    const cachedResult = this.cacheH.nodeCache.get(cacheKey);
     
+    const cachedResult = this.cacheH.getCacheImageLink(docid);
     if (cachedResult) {
-      return next(cachedResult.imagesLinks, "hit");
+      return next(cachedResult.imagesLinks, true);
     }
     
     try {
@@ -158,7 +158,7 @@ module.exports = class opsService{
       });
       
       const imagesLinks = opsImageHelper.parseImagesListBody(data['ops:world-patent-data']['ops:document-inquiry']['ops:inquiry-result']['ops:document-instance']);
-      this.cacheH.nodeCache.set(cacheKey, { imagesLinks }, this.cacheH.calculateTTL());
+      this.cacheH.setCacheImageLink(docid, { imagesLinks });
       return next(imagesLinks);
     } catch (err) {
       if (err?.response?.status === 404){

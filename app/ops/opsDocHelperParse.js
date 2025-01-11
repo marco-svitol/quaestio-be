@@ -39,7 +39,13 @@ function parsePatentServiceResponse(response) {
 }
 
 function parseFamilyIdFromDocId(responseData) {
-  let families = responseData['ops:world-patent-data']['ops:patent-family']['ops:family-member'];
+  // Check if the response is a patent family or an exchange document
+  let families = responseData['ops:world-patent-data']?.['ops:patent-family']?.['ops:family-member'];
+  if (!families) {
+    families = responseData['ops:world-patent-data']['exchange-documents'];
+    families = Array.isArray(families) ? families : [families];
+    return families[0]['exchange-document']['@family-id'];
+  }
   families = Array.isArray(families) ? families : [families];
   return families[0]['@family-id'];
 }
