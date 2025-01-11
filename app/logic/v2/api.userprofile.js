@@ -5,12 +5,10 @@ const cacheH = require("../../consts/cache").cacheHandler;
 
 exports.userprofile = async(req, res, next) => {
 	//validate params middleware??
-	const cacheKey = `${req.auth.payload.sub}|${req.auth.userInfo.pattodate_org_id}`;
-
 	try{
-		const cachedResult = cacheH.nodeCache.get(cacheKey);
+		const cachedResult = cacheH.getCacheUserProfile(`${req.auth.payload.sub}|${req.auth.userInfo.pattodate_org_id}`);
 		if (cachedResult){
-			res.locals.cache = 'hit';
+			res.locals.cacheHit = true;
 			res.locals.status = 200;
 			res.locals.body = cachedResult;
 			return next();
@@ -18,7 +16,7 @@ exports.userprofile = async(req, res, next) => {
 		const qResult = await db._userprofile(req.auth.payload.sub, req.auth.userInfo.pattodate_org_id);
 		if (qResult?.userprofile?.length > 0){
 			qResult.userprofile[0].userinfo.displayname = req.auth.userInfo.name
-			cacheH.nodeCache.set(cacheKey, qResult.userprofile, cacheH.calculateTTL());
+			cacheH.setCacheUserProfile(`${req.auth.payload.sub}|${req.auth.userInfo.pattodate_org_id}`, qResult.userprofile);
 			res.locals.status = 200;
 			res.locals.body = qResult.userprofile;
 		}else{

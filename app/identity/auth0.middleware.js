@@ -1,6 +1,6 @@
 const { auth } = require("express-oauth2-jwt-bearer");
 const axios = require('axios');
-nodeCache = require("../consts/cache").cacheHandler.nodeCache;
+const cacheHandler = require("../consts/cache").cacheHandler;
 const logger=require('../logger'); 
 
 const validateAccessTokenMiddleWare = auth({
@@ -18,10 +18,8 @@ module.exports.getIdentityInfoMiddleware = function(req, res, next) {
     const accessToken = req.headers.authorization;
     const auth0Domain = global.config_data.identity.auth0Domain;
 
-    const cacheKey = `userInfo_${req.auth.payload.sub}`;
-    // Check if the user information exists in the cache
-    const cachedUserInfo = nodeCache.get(cacheKey);
-    if (cachedUserInfo !== undefined) {
+    const cachedUserInfo = cacheHandler.getCacheIdentityInfo(req.auth.payload.sub);
+    if (cachedUserInfo) {
         req.auth.userInfo = cachedUserInfo;
         return next();
     }
@@ -47,7 +45,7 @@ module.exports.getIdentityInfoMiddleware = function(req, res, next) {
         userInfo.pattodate_friendlyLangs = (userInfo.pattodate_friendlyLangs != null) ? userInfo.pattodate_friendlyLangs : global.config_data.ops.opsFriendlyLangs;
         userInfo.pattodate_defaultOpsLang = (userInfo.pattodate_defaultOpsLang != null) ? userInfo.pattodate_defaultOpsLang : global.config_data.ops.opsDefaultLang;
         // Store the user information in the cache with TTL
-        nodeCache.set(cacheKey, userInfo, global.config_data.cache.auth0UserInfoCacheTTLSeconds);
+        cacheHandler.setCacheIdentityInfo(req.auth.payload.sub, userInfo);
         req.auth.userInfo = userInfo ;
         next();
     })

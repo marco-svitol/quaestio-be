@@ -47,6 +47,7 @@ module.exports = myapp => {
   routerapp.get("/v2/opstest", apitest.opstest);
   //TODO: temporary adding middleware to opendoc to retrieve familyid, before is passed from FE
   routerapp.get("/v2/opendoc", opsMiddleware.getFamilyIdFromDocIdMiddleware, apisearchv2.opendoc, expressMiddleware.setCustomHeaders, expressMiddleware.sendRes);
+  routerapp.patch("/v2/docStatus", apisearchv2.docStatus);
   routerapp.patch("/v2/bookmark", opsMiddleware.getFamilyIdFromDocIdMiddleware, apibookmark.bookmark);
   routerapp.post("/v2/bmfolder", apibookmark.bmfolder);
   routerapp.get("/v2/firstpageClipping", apisearchv2.firstpageClipping);

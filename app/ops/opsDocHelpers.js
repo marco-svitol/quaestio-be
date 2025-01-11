@@ -159,8 +159,21 @@ function fetchFamilyIdFromDocId(commonAxiosInstance, docId){
       resolve(familyId);
     })
     .catch(err => {
-      logger.error(`fetchFamilyIdFromDocId: ${err.message}`);
-      reject(err);
+      if (err.response.status == 404){
+        const queryUrl = `/rest-services/published-data/publication/docdb/${docId}`;
+        commonAxiosInstance.get(queryUrl)
+        .then(response => {
+          const familyId = opsDoceHelperParse.parseFamilyIdFromDocId(response.data);
+          resolve(familyId);
+        })
+        .catch(err => {
+          logger.error(`fetchFamilyIdFromDocId: ${err.message}`);
+          reject(err);
+        });
+      }else{
+        logger.error(`fetchFamilyIdFromDocId: ${err.message}`);
+        reject(err);
+      }
     });
   });
 }

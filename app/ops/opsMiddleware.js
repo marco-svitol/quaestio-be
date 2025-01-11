@@ -1,7 +1,7 @@
 const logger=require('../logger'); 
 const opsQuaestio = require("../consts").opsQuaestio;
 const opsDocHelper = require('./opsDocHelpers.js');
-nodeCache = require("../consts/cache").cacheHandler.nodeCache;
+const cacheH = require("../consts/cache").cacheHandler;
 
 module.exports.getFamilyIdFromDocIdMiddleware = async (req, res, next) => {
   // If request already contains familyId then skip
@@ -16,12 +16,11 @@ module.exports.getFamilyIdFromDocIdMiddleware = async (req, res, next) => {
   }
 
   try {
-    const cacheKey = docId;
     // Check if docid exists in the cache
-    let familyId = nodeCache.get(cacheKey);
+    let familyId = cacheH.getCacheFamilyId(docId);
     if (familyId == undefined) {
       familyId = await opsDocHelper.fetchFamilyIdFromDocId(opsQuaestio.commonAxiosInstance, docId);
-      nodeCache.set(cacheKey, familyId, 0);
+      cacheH.setCacheFamilyId(docId, familyId);
     }
     req.query.familyid = familyId;
     next();

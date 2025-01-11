@@ -2,7 +2,7 @@ const logger=require('../logger');
 
 // Define the middleware function to set custom headers
 exports.setCustomHeaders = function (req, res, next) {
-  if (res.locals.cache === 'hit'){
+  if (res.locals.cacheHit){
     logger.verbose('setCustomHeaders: cache hit');
     res.setHeader('X-Cache', 'hit');
   }

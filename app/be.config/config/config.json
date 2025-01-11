@@ -59,7 +59,7 @@
             "azureTranslatorKey" : "",
             "azureTranslatorEndpoint" : "https://api.cognitive.microsofttranslator.com/",
             "azureTranslatorLocation" : "westeurope",
-            "machineTranslatedMark" : "[MT]"
+            "machineTranslatedMark" : "[MT] "
         }
     },
     "production": {
