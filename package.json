@@ -26,7 +26,7 @@
     "lodash": "^4.17.21",
     "logdna-winston": "^4.0.1",
     "moment-timezone": "^0.5.34",
-    "mssql": "^9.1.1",
+    "mssql": "^10.0.2",
     "node-cache": "^5.1.2",
     "node-schedule": "^2.1.1",
     "nodemon": "^2.0.22",
