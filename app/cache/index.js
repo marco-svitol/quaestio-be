@@ -1,20 +1,34 @@
 const NodeCache = require("node-cache");
+const db=require('../database');
+const logger=require('../logger'); 
+const nodeSchedule = require('node-schedule');
 
 module.exports = class nodeCache{
 	constructor(){
-    	this.nodeCache = new NodeCache( { checkperiod: 120 } );
-			this.cacheExpireTime = global.config_data.cache.cacheExpireTime //OPS expire time
-			this.cacheEnabled = global.config_data.cache.cacheEnabled  //en/dis global caching
-			this.units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-			this.cacheKeyPrefixes = {
-				userAuth0Info: 'userAuth0Info',
-				docSearch: 'docSearchResultsOPS',
-				imageLink: 'imageLinkOPS',
-				query: 'queryOPS',
-				userProfile: 'userQProfile',
-				familyId: 'familyIdOPS',
-				translator: 'translatorAzure'
-			};
+		this.nodeCache = new NodeCache( { checkperiod: 120 } );
+		this.cacheExpireTime = global.config_data.cache.cacheExpireTime //OPS expire time
+		this.cacheEnabled = global.config_data.cache.cacheEnabled  //en/dis global caching
+		this.units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+		this.cacheKeyPrefixes = {
+			userAuth0Info: 'userAuth0Info',
+			docSearch: 'docSearchResultsOPS',
+			imageLink: 'imageLinkOPS',
+			query: 'queryOPS',
+			userProfile: 'userQProfile',
+			familyId: 'familyIdOPS',
+			translator: 'translatorAzure'
+		};
+		this.restoreTranslatorCache();
+		this.translatorCacheNeedsDump = false;
+
+		const minutes = global.config_data.cache.translatorCacheDumpIntervalMinutes;
+		const schedule = `*/${minutes} * * * *`; // Run every 'minutes' minutes
+		this.translatorCacheDumpSchedule = nodeSchedule.scheduleJob(schedule, () => {
+			if (this.translatorCacheNeedsDump) {
+				this.dumpTranslatorCache();
+			}
+			logger.debug(`translatorCacheDumpSchedule: next scheduled dump check at ${this.translatorCacheDumpSchedule.nextInvocation()}`);
+		});
 	}
 
 	//Identity info cache
@@ -125,7 +139,9 @@ module.exports = class nodeCache{
 	setCacheTranslator(seed, value){
 		const key = this.getCacheKeyTranslator(seed);
 		this.nodeCache.set(key, value, 0);
+		this.translatorCacheNeedsDump = true;
 	}
+
 	cacheReset() {
 		this.nodeCache.flushAll();
 		return true;
@@ -159,25 +175,40 @@ module.exports = class nodeCache{
 		return keysWithTTL;
 	}
 
-	dumpTranslatorCache(){
-		//This function is used to dump the translator cache keys and values on the MSSQL database
-		// the table name is dbo.TranslatorCache and has two columns: cachekey and cachevalue
-		// the cachekey is the key of the cache and the cachevalue is the value of the cache
-		// This function will call the _updateTranslatorCache function to update the cache on the MSSQL database
-		// This function will pass to _updateTranslatorCache a list of objects with the following structure:
-		// {cachekey: 'key', cachevalue: 'value'}
-		// This function will return the number of cache keys that were dumped
+	dumpTranslatorCache() {
 		const keys = this.nodeCache.keys();
-		const translatorKeys = keys.filter(key => key.includes(this.cacheKeyPrefixes.translator));
+    const translatorKeys = keys.filter(key => key.includes(this.cacheKeyPrefixes.translator));
 
-		const cacheEntries = translatorKeys.map(key => {
-			const value = this.nodeCache.get(key);
-			return { cachekey: key, cachevalue: value };
+    const cacheEntries = translatorKeys.map(key => {
+        const value = this.nodeCache.get(key);
+        return { cachekey: key, cachevalue: value };
+    });
+
+    const jsonString = JSON.stringify(cacheEntries);
+
+    db._updateTranslatorCache(jsonString, (err) => {
+				if (err) {
+						logger.error(`Error dumping translator cache: ${err}`);
+				} else {
+						logger.info(`Succesfully dumped ${cacheEntries.length} translator cache keys`);
+						this.translatorCacheNeedsDump = false;
+						return cacheEntries.length;
+				}
 		});
+	}
 
-		this._updateTranslatorCache(cacheEntries);
-
-		return cacheEntries.length;
+	restoreTranslatorCache() {
+		db._getTranslatorCache((err, body) => {
+			if (err) {
+				logger.error(`Error getting translator cache: ${err}`);
+			} else {
+				const cacheEntries = JSON.parse(body);
+				cacheEntries.forEach(entry => {
+					this.nodeCache.set(entry.cachekey, entry.cachevalue, 0);
+				});
+				logger.info(`Translator cache successfully restored ${cacheEntries.length} keys`);
+			}
+		});
 	}
 
 	// Function to calculate TTL based on expiration time

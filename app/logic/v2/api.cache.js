@@ -34,3 +34,14 @@ exports.cacheKeys = async (req, res) => {
         return res.status(500).json({message: msgServerError});
     }
 }
+
+exports.dumpTranslatorCache = async (req, res) => {
+    try{
+        dumpedKeysNum = cacheH.dumpTranslatorCache()
+        logger.debug(`dumpTranslatorCache: dumped ${dumpedKeysNum} keys`);
+        return res.status(200).json({message: "Cache dumped"});
+    }catch(err){
+        logger.error(`dumpTranslatorCache: error. ${err} `);
+        return res.status(500).json({message: msgServerError});
+    }
+}
