@@ -59,6 +59,7 @@ module.exports = myapp => {
   routerapp.delete("/v2/cachereset", apicache.cacheReset);
   routerapp.get("/v2/cachestats", apicache.cacheStats);
   routerapp.get("/v2/cachekeys", apicache.cacheKeys);
+  routerapp.post("/v2/dumptranslatorcache", apicache.dumpTranslatorCache);
   routerapp.get("/v2/opsMonitoring", apiopsmonitoring.opsMonitoring);
 
   myapp.use('/api', routerapp);

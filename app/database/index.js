@@ -440,34 +440,52 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
   })
 }
 
-// This function will get an object cacheEntries with the following structure:
-// {cachekey: 'key', cachevalue: 'value'}
+
+// This function will get a JSON string containing all cache entries
 // This function will update the cache on the MSSQL database
-module.exports._updateTranslatorCache = async function(translatorCache){
+module.exports._updateTranslatorCache = async function(jsonString, next) {
   const dbRequest = await this.poolrequest();
   const strQuery = `
   MERGE INTO translator_cache AS target
-  ${Object.keys(translatorCache).map((key, index) => {
-    dbRequest.input(`cache_key_${index}`, sql.VarChar(50), key);
-    dbRequest.input(`cache_value_${index}`, sql.NVarChar, translatorCache[key]);
-    return `
-    USING (SELECT @cache_key_${index} AS cache_key, @cache_value_${index} AS cache_value) AS source_${index}
-    ON target.cache_key = source_${index}.cache_key
-    WHEN MATCHED THEN
-        UPDATE SET cache_value = source_${index}.cache_value
-    WHEN NOT MATCHED THEN
-        INSERT (cache_key, cache_value)
-        VALUES (source_${index}.cache_key, source_${index}.cache_value);
-    `;
-  }).join('')}
-  `
+  USING (SELECT 'translator_cache' AS cache_key, @jsonString AS cache_value, GETDATE() as updated) AS source
+  ON target.cache_key = source.cache_key
+  WHEN MATCHED THEN
+      UPDATE SET cache_value = source.cache_value, updated = source.updated
+  WHEN NOT MATCHED THEN
+      INSERT (cache_key, cache_value, updated)
+      VALUES (source.cache_key, source.cache_value, source.updated);
+  `;
+
+  dbRequest.input('jsonString', sql.NVarChar, jsonString);
+
   dbRequest.query(strQuery)
-    .then(() => {
-      return;
-    })
-    .catch(err => {
-      return;
-    })
+  .then(() => {
+    next(null);
+  })
+  .catch(err => {
+    next(err);
+  })
+}
+
+module.exports._getTranslatorCache = async function(next) {
+  const dbRequest = await this.poolrequest();
+  const strQuery = `
+  SELECT cache_value
+  FROM translator_cache
+  WHERE cache_key = 'translator_cache';
+  `;
+
+  dbRequest.query(strQuery)
+  .then(qResult => {
+      if (qResult.recordset.length > 0){
+        next (null, qResult.recordset[0].cache_value);
+      } else {
+        next (null, null);
+      }
+  })
+  .catch(err => {
+      next (err, null);
+  })
 }
 
 function validateDateBookmark(fromField, toField){
