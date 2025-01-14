@@ -68,10 +68,8 @@ exports.bmfolder = async (req, res) => {
 	const bmfoldername = req.query.name ? req.query.name : "";
 
 	//invalidate userprofile cache of current user
-	const cacheKey = `${req.auth.payload.sub}|${req.auth.userInfo.pattodate_org_id}`;
-	cacheResult = cacheH.nodeCache.del( cacheKey );
-	if (cacheResult > 0){
-		logger.debug(`bmfolder: invalidate cache with key ${cacheKey}`);
+	if (cacheH.delCacheUserProfile(`${req.auth.payload.sub}|${req.auth.userInfo.pattodate_org_id}`) > 0){
+		logger.debug(`bmfolder: invalidate cache with key ${req.auth.payload.sub}|${req.auth.userInfo.pattodate_org_id}`);
 	}
 
 	try{

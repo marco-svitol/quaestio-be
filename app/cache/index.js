@@ -92,6 +92,11 @@ module.exports = class nodeCache{
 		this.nodeCache.set(key, value, this.calculateTTL());
 	}
 
+	delCacheUserProfile(seed){
+		const key = this.getCacheKeyUserProfile(seed);
+		return this.nodeCache.del(key);
+	}
+	
 	//FamilyId cache
 	getCacheKeyFamilyId(seed){
 		return `${this.cacheKeyPrefixes.familyId}_${seed}`;
