@@ -10,11 +10,11 @@ exports.bookmark = async (req, res) => {
 	let bookmark = 0;
 	let bmfolderid = null; 
 	let docmetadata = '';
+	familyid = req.query.familyid;
 
 	//Check if bmfolderid and then bookmark = 1
 	if (utils.isCID(req.query.bookmark)){
 		bmfolderid = req.query.bookmark;
-		familyid = req.query.familyid;
 		bookmark = 1;
 		try {
 		docmetadata = await new Promise((resolve, reject) => {
