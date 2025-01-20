@@ -409,8 +409,8 @@ module.exports._getbookmarks = async function(uid, queryParams, next){
     JSON_VALUE(docmetadata, '$.applicant') AS applicant,
     JSON_VALUE(docmetadata, '$.inventor_name') AS inventor_name,
     JSON_VALUE(docmetadata, '$.ops_link') AS ops_link,
-    (SELECT status from familyhistory where CTE.familyid = familyid) as read_history,
-    (SELECT notes from familyhistory where CTE.familyid = familyid) as notes,
+    (SELECT status from familyhistory where CTE.familyid = familyid AND @uid = uid) as read_history,
+    (SELECT notes from familyhistory where CTE.familyid = familyid AND @uid = uid) as notes,
     bookmark,
     CASE WHEN bmfolderid IS NULL 
         THEN (
