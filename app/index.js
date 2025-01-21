@@ -9,7 +9,6 @@ const logger=require('./logger');
 const server=require('./server');
 const rTracer = require('cls-rtracer');
 const cors = require('cors');
-const bot = require('./scheduler');
 app.use(cors({
     origin: '*'
 }));
