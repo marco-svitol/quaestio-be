@@ -5,7 +5,7 @@ const opsQuaestio = require("../consts").opsQuaestio;
 bot.scheduleJob("30 3 * * *", function(){
   
   const reqQueryList = [
-    "PA=SIEGENIA",
+    "PA=SIEGENIA"
   ];
 
   const botInfo = {
