@@ -1,13 +1,10 @@
 {
   "name": "quaestio-be",
-  "version": "1.9.3",
+  "version": "1.9.5",
   "description": "",
   "main": "app/index.js",
-  "nodemonConfig": {
-    "ext": "js,json"
-  },
   "scripts": {
-    "start": "nodemon app/index.js",
+    "start": "node app/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Marco Cambon",
