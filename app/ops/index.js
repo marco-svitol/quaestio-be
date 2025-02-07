@@ -52,6 +52,7 @@ module.exports = class opsService{
         const secondsToWait = this.opsMonitoring.getSecondsToWait(serviceName);
         
         logger.debug(`service: ${serviceName};\
+        getSystemState ${this.opsMonitoring.getSystemState()};\
         getAllowedServiceFreq ${this.opsMonitoring.getAllowedServiceFreq(serviceName)};\
         getServiceFreq ${this.opsMonitoring.getServiceFreq(serviceName)};\
         getSecondsToWait ${this.opsMonitoring.getSecondsToWait(serviceName)};\

@@ -2,7 +2,7 @@ const logger=require('../logger');
 const axios=require('axios');
 const msgServerError = 'Server error';
 
-module.exports = class auth0MgmtAPI{
+module.exports = class Auth0MgmtAPI{
   constructor() {
     this.auth0MgmtAxios = this.createCommonAxiosInstance();
     this.auth0AppAxios = this.createAuth0AppAxiosInstance();
