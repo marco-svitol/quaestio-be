@@ -1,18 +1,9 @@
-const { auth } = require("express-oauth2-jwt-bearer");
+// const { auth } = require("express-oauth2-jwt-bearer");
 const axios = require('axios');
+const jwt = require('jsonwebtoken');
+const jwksClient = require('jwks-rsa');
 const cacheHandler = require("../consts/cache").cacheHandler;
 const logger=require('../logger'); 
-
-const validateAccessTokenMiddleWare = auth({
-  issuerBaseURL: `https://${global.config_data.identity.auth0Domain}`,
-  audience: global.config_data.identity.auth0AppAudience,
-  tokenSigningAlg: 'RS256'
-});
-
-module.exports = {
-  validateAccessTokenMiddleWare,
-};
-
 
 module.exports.getIdentityInfoMiddleware = function(req, res, next) {
     const accessToken = req.headers.authorization;
@@ -55,4 +46,77 @@ module.exports.getIdentityInfoMiddleware = function(req, res, next) {
         const status = 500;
         return res.status(status).json({ message });
     });
+};
+
+class Auth0Verifier {
+  constructor(auth0Domain, audience) {
+    this.auth0Domain = auth0Domain;
+    this.audience = audience;
+    this.jwksUri = `https://${auth0Domain}/.well-known/jwks.json`;
+    this.publicKeys = {}; // Store keys in memory
+
+    // Fetch the signing keys on initialization
+    this._loadKeys();
+  }
+
+  async _loadKeys() {
+    try {
+      const client = jwksClient({ jwksUri: this.jwksUri });
+      const keys = await client.getSigningKeys();
+      this.publicKeys = keys.reduce((acc, key) => {
+        acc[key.kid] = key.getPublicKey();
+        return acc;
+      }, {});
+      logger.info("Auth0 public keys loaded successfully.");
+    } catch (err) {
+      logger.error("Failed to load Auth0 public keys:", err);
+      process.exit(1);
+    }
+  }
+
+  verifyToken(token) {
+    return new Promise((resolve, reject) => {
+      const decodedHeader = jwt.decode(token, { complete: true });
+      if (!decodedHeader || !decodedHeader.header) {
+        return reject(new Error("Invalid token header"));
+      }
+
+      const key = this.publicKeys[decodedHeader.header.kid];
+      if (!key) {
+        return reject(new Error("Signing key not found"));
+      }
+
+      jwt.verify(token, key, {
+        audience: this.audience,
+        issuer: `https://${this.auth0Domain}/`,
+        algorithms: ['RS256']
+      }, (err, decoded) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(decoded);
+      });
+    });
+  }
+}
+
+
+const authVerifier = new Auth0Verifier(global.config_data.identity.auth0Domain, global.config_data.identity.auth0AppAudience);
+
+// Express Middleware for Auth
+module.exports.validateAccessTokenMiddleWare = async function(req, res, next){
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized: Missing token" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = await authVerifier.verifyToken(token);
+    req.auth = { payload: decoded }; // Attach user info to request
+    next();
+  } catch (err) {
+    return res.status(403).json({ error: "Invalid token", details: err.message });
+  }
 };

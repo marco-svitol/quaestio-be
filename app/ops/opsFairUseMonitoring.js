@@ -74,6 +74,10 @@ module.exports = class OpsFairUseMonitoring {
     return this._throttling;
   }
 
+  getSystemState() {
+    return this._throttling.systemState;
+  }
+  
   getAllowedServiceFreq(serviceName) {
     const service = this._throttling[serviceName];
     if (service) {

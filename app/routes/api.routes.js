@@ -12,14 +12,8 @@ module.exports = myapp => {
   const apiidentity = require("../logic/v2/api.identity.js");
   const apicache = require("../logic/v2/api.cache.js");
   const apiopsmonitoring = require("../logic/v2/api.opsMonitoring.js");
-
   const apihealth = require("../logic/health.js");
-
-  const { errorHandler } = require("../identity/error.middleware");
-  const { notFoundHandler } = require("../identity/not-found.middleware");
-
   const { validateAccessTokenMiddleWare, getIdentityInfoMiddleware } = require("../identity/auth0.middleware.js");
-
   const expressMiddleware = require("../express/header.middleware.js");
   //TODO: temporary middleware
   const opsMiddleware = require("../ops/opsMiddleware.js");
@@ -63,9 +57,6 @@ module.exports = myapp => {
   routerapp.get("/v2/opsMonitoring", apiopsmonitoring.opsMonitoring);
 
   myapp.use('/api', routerapp);
-
-  routerapp.use(errorHandler);
-  routerapp.use(notFoundHandler);
 
   routermetrics.get("/health", apihealth.health);
   myapp.use('/', routermetrics);
