@@ -6,33 +6,34 @@ const getuserProfile = `
 SELECT
 logopath AS "userinfo.logopath",
 JSON_QUERY(
-    (
-        SELECT
-            (
-                SELECT id, name
-                FROM OPENJSON(searchvalues, '$.applicants')
-                WITH (id VARCHAR(10) '$.id', name VARCHAR(100) '$.name')
-                FOR JSON PATH
-            ) AS applicants,
-            (
-                SELECT id, name
-                FROM OPENJSON(searchvalues, '$.tecareas')
-                WITH (id VARCHAR(10) '$.id', name VARCHAR(100) '$.name')
-                FOR JSON PATH
-            ) AS tecareas
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-    )
+  (
+    SELECT
+      (
+        SELECT id, name
+        FROM OPENJSON(query_mapping, '$.applicants')
+        WITH (id VARCHAR(10) '$.id', name VARCHAR(100) '$.name')
+        FOR JSON PATH
+      ) AS applicants,
+      (
+        SELECT id, name
+        FROM OPENJSON(query_mapping, '$.tecareas')
+        WITH (id VARCHAR(10) '$.id', name VARCHAR(100) '$.name')
+        FOR JSON PATH
+      ) AS tecareas
+    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+  )
 ) AS searchvalues,
 (
   SELECT
-      bmfolderid as id,
-      bmfoldername as name,
-      bmfolderscope as scope
+    bmfolderid as id,
+    bmfoldername as name,
+    bmfolderscope as scope
   FROM bookmarksfolders
   WHERE uid = @uid
   FOR JSON PATH
 ) AS "bmfolders"
 FROM [orgsprofile]
+JOIN query_mappings ON orgsprofile.query_mapping_id = query_mappings.id
 WHERE org_id = @org_id
 FOR JSON PATH;
 `
