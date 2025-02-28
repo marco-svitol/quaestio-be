@@ -347,8 +347,13 @@ module.exports._getQuery = async function(field, id, org_id){
   dbRequest.input('org_id', sql.Int, org_id);
   const strQuery = `
   SELECT JSON_VALUE(applicant.value, '$.query') AS query 
-  FROM (SELECT searchvalues FROM orgsprofile WHERE org_id = @org_id) as applicants
-  CROSS APPLY OPENJSON(searchvalues, '$.${field}') AS applicant
+  FROM (
+    SELECT query_mapping 
+    FROM [orgsprofile]
+    JOIN query_mappings ON orgsprofile.query_mapping_id = query_mappings.id
+    WHERE org_id = @org_id
+  ) as applicants
+  CROSS APPLY OPENJSON(query_mapping, '$.${field}') AS applicant
   WHERE JSON_VALUE(applicant.value, '$.id') = @id;
 `
   const qResult = await dbRequest.query(strQuery);
