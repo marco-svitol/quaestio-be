@@ -93,6 +93,7 @@ module.exports._userprofile = async function(uid, org_id){
 
 }
 
+//TODO: update to new table version
 module.exports._createuserprofile = async function(uid, next){
   const dbRequest = await this.poolrequest();
   dbRequest.input('uid', sql.VarChar(50), uid);

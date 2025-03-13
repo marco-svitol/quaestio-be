@@ -6,87 +6,160 @@ const status = ["new", "listed", "viewed"];
 const utils=require('../../utils');
 const cacheH = require("../../consts/cache").cacheHandler;
 
-exports.search = async(req, res, next) => {
-	//validate params middleware??
-	const reqQuery = await buildQuery(req.query, req.auth.userInfo.pattodate_org_id);
+// This searchWrapper function is a wrapper of search
+// It first validates the query parameters and then calls the search function
+// The parameters validation are:
+// - doc_num: it can be empty and only chars a-z, A-Z, 0-9, - and . are allowed
+// - pa: it cannot be empty and should be an integer
+// - tecarea: it can be empty and should be an integer
+// - pdfrom: it can be empty and should be a date in the format yyyy-mm-dd
+// - pdto: it can be empty and should be a date in the format yyyy-mm-dd
+// If the query parameters are not valid, it returns a 400 status code with a message
+// If the query parameters are valid, it calls the search function
+// It calls the search function once or multiple times depending on the value of query.doc_num and query.pa
+// If query.doc_num is a string and not empty, it calls search once with the value of query.doc_num
+// If query.pa is a string, not empty and equal to an integer that is divisible by 1009,
+// then if query.tecarea is not empty,
+// it calls search iteratively on query.pa from value 1 up to the value of query.pa divided by 1009
+// and all the other values of query.tecarea, query.pdfrom and query.pdto
+// if query.tecarea is empty, then return empty
+// If query.pa is a string, not empty and not divisible by 1009,
+// it calls search once with the values of query.pa, query.tecarea, query.pdfrom and query.pdto
+exports.searchWrapper = async (req, res, next) => {
+	const { doc_num, pa, tecarea, pdfrom, pdto } = req.query;
 
-	if (!reqQuery) {
-		logger.warn('search: The query for OPS is empty: nothing to search.');
-		return res.status(200).send({});
+	logger.info('searchWrapper: Received query parameters', { doc_num, pa, tecarea, pdfrom, pdto });
+
+	// Validate doc_num
+	if (doc_num && !/^[a-zA-Z0-9-.]+$/.test(doc_num)) {
+		logger.error('searchWrapper: Invalid doc_num format');
+		return res.status(400).json({ message: 'Invalid doc_num format' });
 	}
 
-	logger.debug(reqQuery);
-	
-	opsQuaestio.publishedDataSearch(reqQuery, req.auth.userInfo, (err, body, cacheHit) => {
-		if (!err) {
-			logger.debug(`publishedDataSearch: total filtered and grouped by family: ${body.length}`);
-			db._gethistory(req.auth.payload.sub, (err, familyhistory, dochistory) => { 
-				if (!err){
-					const histBody = body.map(doc => {
-						let f = null;
-						let d = null;
-						if (familyhistory){
-							f = familyhistory.find(hdoc => hdoc.familyid == doc.familyid);
-						}
-						if (dochistory){
-							d = dochistory.find(hdoc => hdoc.docid === doc.doc_num);
-						}
-						doc.read_history = f?.status?status[f.status]:status[0];
-						doc.bookmark = d?.bookmark?d.bookmark:false;
-						doc.notes = f?.notes?f.notes:"";
-						doc.bmfolderid = d?.bmfolderid?d.bmfolderid:"";
-						return doc;
-					})
-					body = histBody.sort((a,b) => b.date - a.date);
-					
-					res.locals.cacheHit = cacheHit;
-					res.locals.status = 200;
-					res.locals.body = body;
+	// Validate pa
+	if (!pa || !Number.isInteger(Number(pa)) || Number(pa) <= 0) {
+		logger.error('searchWrapper: Invalid or missing pa format');
+		return res.status(400).json({ message: 'Invalid or missing pa format' });
+	}
 
-					return next();
-				}else{
-					logger.error(`publishedDataSearch:gethistory ${err.message}. Stack: ${err.stack}`);
-					return res.status(500).json({message: `search: ${msgServerError}`});
-				}
-			})
+	// Validate tecarea
+	if (tecarea && (!Number.isInteger(Number(tecarea)) || Number(tecarea) <= 0)) {
+		logger.error('searchWrapper: Invalid tecarea format');
+		return res.status(400).json({ message: 'Invalid tecarea format' });
+	}
+
+	// Validate pdfrom and pdto
+	const dateRegex = /^\d{4}\d{2}\d{2}$/;
+	if ((pdfrom && !dateRegex.test(pdfrom)) || (pdto && !dateRegex.test(pdto))) {
+		logger.error('searchWrapper: Invalid date format');
+		return res.status(400).json({ message: 'Invalid date format' });
+	}
+
+	logger.info('searchWrapper: Query parameters validated successfully');
+
+	// Call search function based on the query parameters
+	if (doc_num) {
+		logger.info('searchWrapper: Calling search with doc_num');
+		reqQuery = `pn=${doc_num}`;
+		if (await search(reqQuery, req.auth, res)){
 		}else{
-			let error = {
-						status : null,
-						message : ''
-						};
-			if (err?.response?.status === 403 && err?.response?.data){
-				// 403 is returned from OPS, but we convert it in a more meaningful 503 for the FE
-				error.status = 503;
-				const OPSError = utils.parseOPSErrorXML(err.response.data);
-				if (OPSError.isOPSError){
-					error.message = {
-						"OPS_HTTP_STATUS": 403, 
-						"OPS_CODE": OPSError.code,
-						"OPS_MESSAGE": OPSError.message
-					};
-				}else{
-					error.message  = {
-						"HTTP_STATUS":  403,
-						"MESSAGE" : err.message
-					};
-				}
-			}else{
-				error.status = 500
-				error.message = err.message;
-				error.stack = err.stack;
-			}
-			logger.error(`publishedDataSearch: Status: ${error.status}. Message: ${JSON.stringify(error.message)}. Stack: ${error.stack}`);
-			return res.status(error.status).json({message: error.message});
+			logger.error(`searchWrapper: Error ${res.locals.status}. ${res.locals.body.message}`);
+			res.locals.body = {};
 		}
-	})
+	}else if (Number(pa) % 1009 === 0) {
+		if (tecarea) {
+			logger.info('searchWrapper: Iteratively calling search with pa and tecarea');
+			let finalResult = [];
+			for (let i = 1; i <= Number(pa) / 1009; i++) {
+				req.query.pa = i.toString();
+				logger.debug(`searchWrapper: Iteration ${i} with pa=${req.query.pa}`);
+				const reqQuery = await buildQuery(req.query, req.auth.userInfo.pattodate_org_id);
+				if (await search(reqQuery, req.auth, res)){
+					finalResult = finalResult.concat(res.locals.body);
+				}else{
+					logger.error(`searchWrapper: Error ${res.locals.status}. ${res.locals.body.message}`);
+					res.locals.body = {};
+				}
+			}
+			res.locals.body = finalResult;
+		} else {
+			logger.info('searchWrapper: tecarea is empty, returning empty response');
+			res.locals.status = 200;
+			res.locals.body = [];
+		}
+	} else {
+		logger.info('searchWrapper: Calling search with pa');
+		const reqQuery = await buildQuery(req.query, req.auth.userInfo.pattodate_org_id);
+		if (!(await search(reqQuery, req.auth, res))){
+			logger.error(`searchWrapper: Error ${res.locals.status}. ${res.locals.body.message}`);
+			res.locals.body = {};
+		}
+	}
+	return next();
+};
+
+async function search(reqQuery, auth, res) {
+	logger.debug(reqQuery);
+
+	try {
+			const body = await new Promise((resolve, reject) => {
+					opsQuaestio.publishedDataSearch(reqQuery, auth.userInfo, (err, body, cacheHit) => {
+							if (err) {
+									reject(err);
+							} else {
+									resolve({ body, cacheHit });
+							}
+					});
+			});
+
+			const { body: searchBody, cacheHit } = body;
+
+			const history = await new Promise((resolve, reject) => {
+					db._gethistory(auth.payload.sub, (err, familyhistory, dochistory) => {
+							if (err) {
+									reject(err);
+							} else {
+									resolve({ familyhistory, dochistory });
+							}
+					});
+			});
+
+			const { familyhistory, dochistory } = history;
+
+			const histBody = searchBody.map(doc => {
+					let f = null;
+					let d = null;
+					if (familyhistory) {
+							f = familyhistory.find(hdoc => hdoc.familyid == doc.familyid);
+					}
+					if (dochistory) {
+							d = dochistory.find(hdoc => hdoc.docid === doc.doc_num);
+					}
+					doc.read_history = f?.status ? status[f.status] : status[0];
+					doc.bookmark = d?.bookmark ? d.bookmark : false;
+					doc.notes = f?.notes ? f.notes : "";
+					doc.bmfolderid = d?.bmfolderid ? d.bmfolderid : "";
+					return doc;
+			});
+
+			const sortedBody = histBody.sort((a, b) => b.date - a.date);
+
+			res.locals.cacheHit = res.locals.cacheHit || cacheHit;
+			res.locals.status = 200;
+			res.locals.body = sortedBody;
+			return true;
+	} catch (err) {
+			logger.error(`search: ${err.message}. Stack: ${err.stack}`);
+			res.locals.cacheHit = false;
+			res.locals.status = err.status || 500;
+			res.locals.body = { message: `search: ${msgServerError}` };
+			return false;
+	}
 }
 
 async function buildQuery(query, orgId) {
   let reqQuery = "";
   
-  if (typeof query.doc_num === "string" && query.doc_num.trim() !== "") {
-    reqQuery = `pn=${query.doc_num}`;
-  } else {
     const conditions = [];
     
     if (query.pa) {
@@ -104,7 +177,6 @@ async function buildQuery(query, orgId) {
     if (conditions.length > 0) {
       reqQuery = conditions.join(" AND ");
     }
-  }
   
   return reqQuery;
 };
@@ -125,38 +197,20 @@ async function getQueryFromId (field, id, org_id){
 	}
 }
 
-// exports.opendoc = async(req, res, next) => {
-// 	//update doc history and return OPS Link
-// 	db._updatehistory(req.auth.payload.sub, req.query.doc_num, req.query.familyid, status.indexOf("viewed"), (err) => {
-// 		if (err){
-// 			logger.error(`opendoc: ${msgServerError}: ${err}`);
-// 			return res.status(500).json({message: `opendoc: ${msgServerError}`});
-// 		}else{
-// 			//retrieve link to firstpageClipping
-// 			const opslink = opsQuaestio.getLinkFromDocId(req.query.doc_num);
-// 			opsQuaestio.getImagesLinksFromDocId((req.query.doc_num), (imagesLinks, cacheHit) => {
-// 				res.locals.cacheHit = cacheHit;
-// 				res.locals.status = 200
-// 				res.locals.body = {ops_link: opslink, images_links: imagesLinks ? imagesLinks : ""}
-// 				return next();
-// 			})
-// 		}
-// 	})
-// }
 exports.opendoc = async (req, res, next) => {
 	try {
-		//TODO: to be removed after docStatus is ready
-		await new Promise((resolve, reject) => {
-			db._docStatus(req.auth.payload.sub, req.query.familyid, status.indexOf("viewed"), (err) => {
-			//db._updatehistory(req.auth.payload.sub, req.query.doc_num, req.query.familyid, status.indexOf("viewed"), (err) => {
-				if (err) {
-					logger.error(`opendoc: ${msgServerError}: ${err}`);
-					reject(err);
-				} else {
-					resolve();
-				}
-			});
-		});
+		// TODO: A day will come when we will be asked to re-enable this: set a document to "viewed" when is opened
+		// await new Promise((resolve, reject) => {
+		// 	db._docStatus(req.auth.payload.sub, req.query.familyid, status.indexOf("viewed"), (err) => {
+		// 	//db._updatehistory(req.auth.payload.sub, req.query.doc_num, req.query.familyid, status.indexOf("viewed"), (err) => {
+		// 		if (err) {
+		// 			logger.error(`opendoc: ${msgServerError}: ${err}`);
+		// 			reject(err);
+		// 		} else {
+		// 			resolve();
+		// 		}
+		// 	});
+		// });
 
 		//retrieve link to firstpageClipping
 		const opslink = opsQuaestio.getLinkFromDocId(req.query.doc_num);
