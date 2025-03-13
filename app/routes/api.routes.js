@@ -45,7 +45,7 @@ module.exports = myapp => {
   routerapp.patch("/v2/bookmark", opsMiddleware.getFamilyIdFromDocIdMiddleware, apibookmark.bookmark);
   routerapp.post("/v2/bmfolder", apibookmark.bmfolder);
   routerapp.get("/v2/firstpageClipping", apisearchv2.firstpageClipping);
-  routerapp.get("/v2/search", apisearchv2.search, expressMiddleware.setCustomHeaders, expressMiddleware.sendRes );
+  routerapp.get("/v2/search", apisearchv2.searchWrapper, expressMiddleware.setCustomHeaders, expressMiddleware.sendRes );
   routerapp.get("/v2/userprofile", apiuserprofile.userprofile, expressMiddleware.setCustomHeaders, expressMiddleware.sendRes );
   routerapp.get("/v2/searchbookmark", apibookmark.searchbookmark);
   routerapp.patch("/v2/notes", opsMiddleware.getFamilyIdFromDocIdMiddleware, apinotes.notes);
