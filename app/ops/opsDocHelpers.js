@@ -2,6 +2,7 @@ const logger=require('../logger');
 const opsDOCURL = global.config_data.ops.opsDocURL;
 const opsDoceHelperParse = require('./opsDocHelperParse');
 const opsDoceHelperExtractData = require('./opsDocHelperExtractData');
+const { response } = require('express');
 
 //Fetch document metadata
 function getDocInfo(opsPublication){
@@ -38,45 +39,50 @@ async function getAllDocumentsRecurse(strQuery, commonAxiosInstance, userInfo, p
     const range = `${pageStart}-${pageEnd}`;
     const queryUrl = `/rest-services/published-data/search/biblio?q=${strQuery}&Range=${range}`;
     // Filter for Kind type, get page range
-    const patentServiceResponseParsed = opsDoceHelperParse.parsePatentServiceResponse(await commonAxiosInstance.get(queryUrl));
-    
-    logger.debug(`getAllDocumentsRecurse: pageStart=${pageStart}; pageEnd=${pageEnd}; total: ${patentServiceResponseParsed.opsPublications.length}(=${patentServiceResponseParsed.opsResultsInfo.total_count}-${patentServiceResponseParsed.opsResultsInfo.total_count-patentServiceResponseParsed.opsPublications.length})`);
-    
-    const filteredDocs = [];
-    // Iterate through all documents of current range to extract the final data
-    for (let opsPublication of patentServiceResponseParsed.opsPublications) {
-      opsPublication=opsPublication['exchange-document'];
-      const docInfo = getDocInfo(opsPublication);
-      const docUrl = getLinkFromDocIdHelper(docInfo["docNum"]);
+    opsRawResponse = await commonAxiosInstance.get(queryUrl);
+    if (opsRawResponse){
+      const patentServiceResponseParsed = opsDoceHelperParse.parsePatentServiceResponse(opsRawResponse);
+      
+      logger.debug(`getAllDocumentsRecurse: pageStart=${pageStart}; pageEnd=${pageEnd}; total: ${patentServiceResponseParsed.opsPublications.length}(=${patentServiceResponseParsed.opsResultsInfo.total_count}-${patentServiceResponseParsed.opsResultsInfo.total_count-patentServiceResponseParsed.opsPublications.length})`);
+      
+      const filteredDocs = [];
+      // Iterate through all documents of current range to extract the final data
+      for (let opsPublication of patentServiceResponseParsed.opsPublications) {
+        opsPublication=opsPublication['exchange-document'];
+        const docInfo = getDocInfo(opsPublication);
+        const docUrl = getLinkFromDocIdHelper(docInfo["docNum"]);
 
-      const docData = await opsDoceHelperExtractData.publicationDataFilteredAsync(opsPublication, userInfo);
+        const docData = await opsDoceHelperExtractData.publicationDataFilteredAsync(opsPublication, userInfo);
 
-      filteredDocs.push({
-        "doc_num": docInfo["docNum"],
-        "type": docInfo["docType"],
-        "familyid": docInfo["familyid"],
-        "country": docInfo["country"],
-        "invention_title": docData.title,
-        "date": docData.date,
-        "abstract": docData.abstract,
-        "applicant": docData.applicant,
-        "inventor_name": docData.inventor,
-        "ops_link": docUrl
-      });
+        filteredDocs.push({
+          "doc_num": docInfo["docNum"],
+          "type": docInfo["docType"],
+          "familyid": docInfo["familyid"],
+          "country": docInfo["country"],
+          "invention_title": docData.title,
+          "date": docData.date,
+          "abstract": docData.abstract,
+          "applicant": docData.applicant,
+          "inventor_name": docData.inventor,
+          "ops_link": docUrl
+        });
+      }
+
+      allDocs.push(...filteredDocs);
+
+      // Calculate the next page range
+      const nextPageStart = pageEnd + 1;
+      const nextPageEnd = pageEnd + 100;
+
+      if (nextPageStart <= patentServiceResponseParsed.opsResultsInfo.total_count && nextPageStart <= global.config_data.ops.opsMaxResults) {
+        // Recursively call the function with the next page range
+        return getAllDocumentsRecurse(strQuery, commonAxiosInstance, userInfo, nextPageStart, nextPageEnd, allDocs);
+      }
+    }else{
+      logger.info(`getAllDocumentsRecurse: no results found for query ${strQuery}`);
     }
 
-    allDocs.push(...filteredDocs);
-
-    // Calculate the next page range
-    const nextPageStart = pageEnd + 1;
-    const nextPageEnd = pageEnd + 100;
-
-    if (nextPageStart <= patentServiceResponseParsed.opsResultsInfo.total_count && nextPageStart <= global.config_data.ops.opsMaxResults) {
-      // Recursively call the function with the next page range
-      return getAllDocumentsRecurse(strQuery, commonAxiosInstance, userInfo, nextPageStart, nextPageEnd, allDocs);
-    }
-
-    // Return all documents
+    // Return all documents or empty array
     return { documents: allDocs};
   } catch (err) {
     throw err; // Handle errors as needed

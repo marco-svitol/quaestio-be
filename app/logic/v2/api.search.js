@@ -28,8 +28,6 @@ const cacheH = require("../../consts/cache").cacheHandler;
 exports.searchWrapper = async (req, res, next) => {
 	const { doc_num, pa, tecarea, pdfrom, pdto } = req.query;
 
-	logger.info('searchWrapper: Received query parameters', { doc_num, pa, tecarea, pdfrom, pdto });
-
 	// Validate doc_num
 	if (doc_num && !/^[a-zA-Z0-9-.]+$/.test(doc_num)) {
 		logger.error('searchWrapper: Invalid doc_num format');
@@ -55,8 +53,6 @@ exports.searchWrapper = async (req, res, next) => {
 		return res.status(400).json({ message: 'Invalid date format' });
 	}
 
-	logger.info('searchWrapper: Query parameters validated successfully');
-
 	// Call search function based on the query parameters
 	if (doc_num) {
 		logger.info('searchWrapper: Calling search with doc_num');
@@ -67,12 +63,12 @@ exports.searchWrapper = async (req, res, next) => {
 			res.locals.body = {};
 		}
 	}else if (Number(pa) % 1009 === 0) {
-		if (tecarea) {
+		if (tecarea && pdfrom) {
 			logger.info('searchWrapper: Iteratively calling search with pa and tecarea');
 			let finalResult = [];
 			for (let i = 1; i <= Number(pa) / 1009; i++) {
 				req.query.pa = i.toString();
-				logger.debug(`searchWrapper: Iteration ${i} with pa=${req.query.pa}`);
+				logger.info(`searchWrapper: Iteration ${i} with pa=${req.query.pa}`);
 				const reqQuery = await buildQuery(req.query, req.auth.userInfo.pattodate_org_id);
 				if (await search(reqQuery, req.auth, res)){
 					finalResult = finalResult.concat(res.locals.body);
@@ -83,12 +79,11 @@ exports.searchWrapper = async (req, res, next) => {
 			}
 			res.locals.body = finalResult;
 		} else {
-			logger.info('searchWrapper: tecarea is empty, returning empty response');
+			logger.info('searchWrapper: when "All" applicants is selected, tecarea and date range are required. Sending empty response');
 			res.locals.status = 200;
 			res.locals.body = [];
 		}
 	} else {
-		logger.info('searchWrapper: Calling search with pa');
 		const reqQuery = await buildQuery(req.query, req.auth.userInfo.pattodate_org_id);
 		if (!(await search(reqQuery, req.auth, res))){
 			logger.error(`searchWrapper: Error ${res.locals.status}. ${res.locals.body.message}`);
@@ -149,10 +144,12 @@ async function search(reqQuery, auth, res) {
 			res.locals.body = sortedBody;
 			return true;
 	} catch (err) {
-			logger.error(`search: ${err.message}. Stack: ${err.stack}`);
+			if (!err.handled){
+				logger.error(`search: ${err.message}. Stack: ${err.stack}`);
+			}
 			res.locals.cacheHit = false;
 			res.locals.status = err.status || 500;
-			res.locals.body = { message: `search: ${msgServerError}` };
+			res.locals.body = { message: `search: ${err.message}` };
 			return false;
 	}
 }
@@ -171,7 +168,7 @@ async function buildQuery(query, orgId) {
     }
     
     if (query.pdfrom) {
-      conditions.push(utils.validateDate(query.pdfrom, query.pdto));
+      conditions.push(utils.buildDateRange(query.pdfrom, query.pdto));
     }
     
     if (conditions.length > 0) {
