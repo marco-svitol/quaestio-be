@@ -1,11 +1,10 @@
 const axios=require('axios');
 const logger=require('../logger'); 
 const opsMonitoring=require('./opsFairUseMonitoring.js');
-const rTracer = require('cls-rtracer');
 const opsDocHelper = require('./opsDocHelpers.js');
 const opsImageHelper = require('./opsImageHelper.js');
 const opsTranslatorInstance = require('./opsTranslator');
-
+const { DOMParser } = require('@xmldom/xmldom')
 
 //Authentication Axios instance
 let authParams = new URLSearchParams({grant_type : 'client_credentials'});
@@ -52,11 +51,11 @@ module.exports = class opsService{
         const secondsToWait = this.opsMonitoring.getSecondsToWait(serviceName);
         
         logger.debug(`service: ${serviceName};\
-        getSystemState ${this.opsMonitoring.getSystemState()};\
-        getAllowedServiceFreq ${this.opsMonitoring.getAllowedServiceFreq(serviceName)};\
-        getServiceFreq ${this.opsMonitoring.getServiceFreq(serviceName)};\
-        getSecondsToWait ${this.opsMonitoring.getSecondsToWait(serviceName)};\
-        getServiceLight ${this.opsMonitoring.getServiceLight(serviceName)};`);
+getSystemState ${this.opsMonitoring.getSystemState()};\
+getAllowedServiceFreq ${this.opsMonitoring.getAllowedServiceFreq(serviceName)};\
+getServiceFreq ${this.opsMonitoring.getServiceFreq(serviceName)};\
+getSecondsToWait ${this.opsMonitoring.getSecondsToWait(serviceName)};\
+getServiceLight ${this.opsMonitoring.getServiceLight(serviceName)};`);
         
         if (secondsToWait > 0) {
           // If there are seconds to wait, delay the execution of the request
@@ -78,6 +77,7 @@ module.exports = class opsService{
     newAxios.interceptors.response.use(
       (response) => {
         const serviceName = this.opsMonitoring.identifyServiceFromURL(response.config.url);
+        // logger.debug(`Axios: response.headers: ${response.headers}`);
         this.opsMonitoring.updateMonitoring(response.headers, serviceName)
         return response 
       },
@@ -85,34 +85,39 @@ module.exports = class opsService{
         if (error.response && error.config) {
           const statuscode = error.response.status;
           const originalRequest = error.config;
-          logger.debug(`Axios: ${error.code} : ${error.response.data}`);
           if ((!authResponse.access_token || [400,401,403].includes(statuscode)) && !originalRequest._retry ){
             originalRequest._retry = true;
             await refreshToken();
             logger.debug (`Successfully acquired token from OPS, will expire in approximately ${(authResponse.expires_in/60).toFixed(2)} minutes`);
             return newAxios(originalRequest); 
+          } else if (error.response.headers['x-api'] && error.response.headers['x-api'].startsWith('ops')) {
+            const { errorCode, errorMessage } = this.parseErrorResponse(error);
+            const serviceName = this.opsMonitoring.identifyServiceFromURL(error.response.config.url);
+            this.opsMonitoring.updateMonitoring(error.response.headers, serviceName)
+            switch (errorCode) {
+              case "SERVER.EntityNotFound":
+              return null;
+              // case "CLIENT.RobotDetected":
+              //   break;
+              // case "CLIENT.MaximumTotalTerms":
+              //   break;
+              // default:
+              //   
+            }
           }
         }
         return Promise.reject(error);
       }
     )
-    // newAxios.interceptors.response.use(
-    //   (response) => {return response},
-    //   async (error) => {
-    //       const terror = {
-    //         "code" : "ERR_BAD_REQUEST",
-    //         "response" : {
-    //           "status" : 403,
-    //           "data" : "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<fault xmlns=\"http://ops.epo.org\">\n    <code>CLIENT.RobotDetected</code>\n    <message>Recent behaviour implies you are a robot. The server is at the moment too busy to serve robots. Please try again later</message>\n</fault>",
-    //         },
-    //         "message" : "Request failed with status code 403",
-    //         "stack" : "this is the stack"
-    //         };
-    //       logger.debug(`Axios: ${terror.code} : ${terror.response.data}`);
-    //     return Promise.reject(terror);
-    //   }
-    // )
     return newAxios;
+  }
+
+  parseErrorResponse(error) {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(error.response.data, "text/xml");
+    const errorCode = xmlDoc.getElementsByTagName("code")[0].childNodes[0].nodeValue;
+    const errorMessage = xmlDoc.getElementsByTagName("message")[0].childNodes[0].nodeValue;
+    return { errorCode, errorMessage };
   }
 
   async publishedDataSearch(strQuery, userInfo, next) {
@@ -122,21 +127,32 @@ module.exports = class opsService{
       return next(null, cachedResult.documents, true);
     }
   
+    let result ={ documents: [] };
     try {
-      const result = await opsDocHelper.getAllDocumentsRecurse(strQuery, this.commonAxiosInstance, userInfo);
+      result = await opsDocHelper.getAllDocumentsRecurse(strQuery, this.commonAxiosInstance, userInfo);
       result.documents = opsDocHelper.getFamilyOldests(result.documents);
       result.documents = await opsTranslatorInstance.translateDocs(result.documents, userInfo)
-      // Cache the result with the calculated TTL
-      this.cacheH.setCacheDocSearch(strQuery, { documents: result.documents});
-
-      return next(null, result.documents);
     } catch (err) {
-      if (err.response && err?.response?.status === 404) {
-        return next(null, []);
-      } else {
-        return next(err, null);
+      const { errorCode, errorMessage } = this.parseErrorResponse(err);
+      switch (errorCode) {
+        case "CLIENT.RobotDetected":
+          logger.error(`Axios: OPS replied that a Robot was detected and sent this message: ${errorMessage}`);
+          err.handled = true;
+          err.message = errorMessage;
+          break;
+        case "CLIENT.MaximumTotalTerms":
+          logger.error(`Axios: OPS replied that the query has too many terms and sent this message: ${errorMessage}`);
+          err.handled = true;
+          err.message = errorMessage;
+          break;
+        default:
+          logger.debug(`Axios: OPS sent this error code: ${errorCode} with this message: ${errorMessage}`);
       }
+      return next(err, null);
     }
+    // Cache the result
+    this.cacheH.setCacheDocSearch(strQuery, { documents: result.documents});
+    return next(null, result.documents);
   }
 
   getLinkFromDocId(docNum){

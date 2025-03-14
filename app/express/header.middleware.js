@@ -10,5 +10,8 @@ exports.setCustomHeaders = function (req, res, next) {
 }
 
 exports.sendRes = function(req, res){
+  if (res.locals.status >= 400){
+    return res.end();
+  }
   res.status(res.locals.status).json(res.locals.body);
 }
