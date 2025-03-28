@@ -35,7 +35,7 @@ exports.searchWrapper = async (req, res, next) => {
 	}
 
 	// Validate pa
-	if (!pa || !Number.isInteger(Number(pa)) || Number(pa) <= 0) {
+	if (!doc_num && (!pa || !Number.isInteger(Number(pa)) || Number(pa) <= 0)) {
 		logger.error('searchWrapper: Invalid or missing pa format');
 		return res.status(400).json({ message: 'Invalid or missing pa format' });
 	}
