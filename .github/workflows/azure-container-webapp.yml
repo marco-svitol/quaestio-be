@@ -45,16 +45,67 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  docker-build:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version-for-deploy.outputs.VERSION }}
       build_number: ${{ steps.build-number-for-deploy.outputs.BUILD_NUMBER}}
     steps:
       - uses: actions/checkout@v4
-      - uses: azure/login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Lowercase the repo name and username
+        run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+      
+      - name: Set build number
+        run: echo "BUILD_NUMBER=$(date +%s)" >> $GITHUB_ENV
+
+      - name: Set build number for deploy
+        id: build-number-for-deploy
+        run: echo "BUILD_NUMBER=${{ env.BUILD_NUMBER }}" >> $GITHUB_OUTPUT
+
+      - name: Read version from package.json
+        id: version
+        run: echo "::set-output name=version::$(node -e 'console.log(require("./package.json").version)')"
+
+      - name: Set build number for deploy
+        id: version-for-deploy
+        run: echo "VERSION=$(node -e 'console.log(require("./package.json").version)')" >> $GITHUB_OUTPUT
+
+      - name: Show secret
+        run: echo "OPSBASEURL=${{ secrets.OPSBASEURL }}"
+        
+      - name: Build and push container image to registry
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: | 
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:${{ steps.version.outputs.version }}build${{ env.BUILD_NUMBER }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:latest
+          file: ./Dockerfile
+          build-args: |
+            BUILD_NUMBER= ${{ env.BUILD_NUMBER }}
+
+  azure-configure:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Azure Login
+        uses: azure/login@v2
         with:
           creds: '${{ secrets.AZURE_CREDENTIALS }}'
+          
       - name: Set Web App settings
         uses: Azure/appservice-settings@v1
         with:
@@ -156,55 +207,16 @@ jobs:
                 "value": "${{ secrets.AZURE_TRANSLATOR_KEY }}",
                 "slotSetting": false
               }
-            ]        
+            ]
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Lowercase the repo name and username
-        run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
-      
-      - name: Set build number
-        run: echo "BUILD_NUMBER=$(date +%s)" >> $GITHUB_ENV
-
-      - name: Set build number for deploy
-        id: build-number-for-deploy
-        run: echo "BUILD_NUMBER=${{ env.BUILD_NUMBER }}" >> $GITHUB_OUTPUT
-
-      - name: Read version from package.json
-        id: version
-        run: echo "::set-output name=version::$(node -e 'console.log(require("./package.json").version)')"
-
-      - name: Set build number for deploy
-        id: version-for-deploy
-        run: echo "VERSION=$(node -e 'console.log(require("./package.json").version)')" >> $GITHUB_OUTPUT
-
-      - name: Show secret
-        run: echo "OPSBASEURL=${{ secrets.OPSBASEURL }}"
-        
-      - name: Build and push container image to registry
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: | 
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:${{ steps.version.outputs.version }}build${{ env.BUILD_NUMBER }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:latest
-          file: ./Dockerfile
-          build-args: |
-            BUILD_NUMBER= ${{ env.BUILD_NUMBER }}
-
-  deploy:
+  azure-deploy:
     permissions:
       contents: none
     runs-on: ubuntu-latest
-    needs: build
+    needs: 
+      - docker-build
+      - azure-configure
+    if: always() && needs.docker-build.result == 'success'
     environment:
       name: 'Development'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
@@ -212,8 +224,10 @@ jobs:
     steps:
       - name: Debug
         run: |
-          echo "Version: ${{ needs.build.outputs.version }}"
-          echo "Build Number: ${{ needs.build.outputs.build_number }}"
+          echo "Version: ${{ needs.docker-build.outputs.version }}"
+          echo "Build Number: ${{ needs.docker-build.outputs.build_number }}"
+          echo "Docker Build Status: ${{ needs.docker-build.result }}"
+          echo "Azure Configure Status: ${{ needs.azure-configure.result }}"
 
       - name: Lowercase the repo name and username
         run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
@@ -224,4 +238,4 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: '${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:${{ needs.build.outputs.version }}build${{ needs.build.outputs.build_number }}'
+          images: '${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:${{ needs.docker-build.outputs.version }}build${{ needs.docker-build.outputs.build_number }}'
